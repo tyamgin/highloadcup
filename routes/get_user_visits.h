@@ -26,6 +26,10 @@ struct UserVisitItem
 class GetUserVisitsRouteProcessor : public RouteProcessor
 {
 public:
+    explicit GetUserVisitsRouteProcessor(int socket_fd) : RouteProcessor(socket_fd)
+    {
+    }
+
     void process(const char* str_user_id,
                  const char* str_from_date,
                  const char* str_to_date,
@@ -45,23 +49,25 @@ public:
             return;
         }
 
-        if (str_from_date[0] != 0 && !Utility::is_int(str_from_date)
-            || str_to_date[0] != 0 && !Utility::is_int(str_to_date)
-            || str_to_distance[0] != 0 && !Utility::is_int(str_to_distance))
+        if (str_from_date && !Utility::is_int(str_from_date)
+            || str_to_date && !Utility::is_int(str_to_date)
+            || str_to_distance && !Utility::is_int(str_to_distance))
         {
             handle_400();
             return;
         }
 
-        int from_date = str_from_date[0] == 0 ? INT_MIN : atoi(str_from_date) + 1;
-        int to_date = str_to_date[0] == 0 ? INT_MAX : atoi(str_to_date) - 1;
-        int to_distance = str_to_distance[0] == 0 ? INT_MAX : atoi(str_to_distance) - 1;
+        int from_date = str_from_date == NULL ? INT_MIN : atoi(str_from_date) + 1;
+        int to_date = str_to_date == NULL ? INT_MAX : atoi(str_to_date) - 1;
+        int to_distance = str_to_distance == NULL ? INT_MAX : atoi(str_to_distance) - 1;
 
         auto &user = state.users[user_id];
         if (user == NULL)
             throw runtime_error("user is NULL");
 
         vector<UserVisitItem> visits;
+
+        string s_country = Utility::urlDecode(country ? country : "");
 
         for (auto &visit : state.user_visits[user->id])
         {
@@ -71,7 +77,7 @@ public:
 
                 if (location->distance <= to_distance)
                 {
-                    if (country[0] == 0 || location->country == country)
+                    if (country == NULL || location->country == s_country)
                     {
                         visits.push_back({
                                                  visit->mark,
@@ -86,16 +92,17 @@ public:
             return a.visited_at < b.visited_at;
         });
 
-        body += "{\"visits\": [\n";
+        string body = "{\"visits\":[";
         bool first = true;
         for (auto &visit : visits)
         {
             if (!first)
-                body += ",\n";
+                body += ",";
             first = false;
             body += visit.to_json();
         }
-        body += "\n]}";
+        body += "]}";
+        handle_200(body.c_str(), body.size());
     }
 };
 

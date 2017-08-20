@@ -13,7 +13,8 @@ class FastIntHashMap
 
     static unsigned _hash(int key)
     {
-        return ((long long)key - INT_MIN) % max_size;
+        auto uval = unsigned((long long)key - INT_MIN);
+        return uval * 2654435761 % max_size;
     }
 
 public:

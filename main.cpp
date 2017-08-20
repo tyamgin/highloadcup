@@ -1,164 +1,254 @@
-#define THREADS_COUNT 0
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sstream>
-#include <vector>
-#include <iostream>
-#include <codecvt>
 
-#include "json.h"
 #include "web-server.h"
 #include "routes/get_entity.h"
 #include "routes/get_user_visits.h"
 #include "routes/get_location_avg.h"
 #include "routes/post_entity.h"
-#include "logger.h"
 #include "thread_pool.h"
 
 using namespace std;
 
-#define BUFFER_MAX_SIZE (1 << 17)
+#define INT_MAX_LENGTH 11
 
-ThreadPool thread_pool(THREADS_COUNT);
+#define M_LOCATIONS_AVG_PARAMS_MAX_LENGTH ((\
+        sizeof("fromDate") + INT_MAX_LENGTH + 1 +\
+        sizeof("toDate")   + INT_MAX_LENGTH + 1 +\
+        sizeof("fromAge")  + INT_MAX_LENGTH + 1 +\
+        sizeof("toDate")   + INT_MAX_LENGTH + 1 +\
+        sizeof("gender")   + 1) + 1)
+
+#define M_USERS_VISITS_PARAMS_MAX_LENGTH ((\
+        sizeof("fromDate")   + INT_MAX_LENGTH + 1 +\
+        sizeof("toDate")     + INT_MAX_LENGTH + 1 +\
+        sizeof("toDistance") + INT_MAX_LENGTH + 1 +\
+        sizeof("country")    + 50 * 6) + 1) // 6 - urlencoded unicode
+
+#define M_THREADS_COUNT 0
+#define M_BUFFER_MAX_SIZE (1 << 12)
+#define M_BUFFER_FIRST_CHUNK_SIZE (31)
+
+ThreadPool thread_pool(M_THREADS_COUNT);
+
+ssize_t read_buf(int sfd, char* buf, size_t size)
+{
+    ssize_t n;
+    while (1)
+    {
+        n = read(sfd, buf, size);
+        if (n == -1)
+        {
+            // If errno == EAGAIN, that means we have read all data. So go back to the main loop.
+            if (errno != EAGAIN)
+            {
+                perror("read");
+                abort();
+            }
+            // it's ok in generally, but abort anyway
+            //logger::log("n == -1");
+            //abort();
+            return -1;
+        }
+        else if (n == 0)
+        {
+            //logger::log("n == 0");
+            //abort();
+            return -1;
+            // End of file. The remote has closed the connection.
+        }
+        break;
+    }
+    return n;
+}
+
 
 int handle_request1(int socket_fd)
 {
     ssize_t n;
     string response;
 
-    static thread_local char buffer[BUFFER_MAX_SIZE];
+    static thread_local char buffer[M_BUFFER_MAX_SIZE];
 
-    n = recv(socket_fd, buffer, BUFFER_MAX_SIZE, 0);
-    if (n < 0)
-    {
-        perror("recv()");
-        return 0;
-    }
-    if (n == BUFFER_MAX_SIZE)
-    {
-        logger::error("Buffer max length reached");
-        exit(1);
-    }
+    static int query_id = 1;
+
+
+    n = read_buf(socket_fd, buffer, M_BUFFER_MAX_SIZE);
+    //n = read_buf(socket_fd, buffer, M_BUFFER_FIRST_CHUNK_SIZE);
+    if (n <= 0)
+        return -1;
+    //n += read_buf(socket_fd, buffer + n, M_BUFFER_MAX_SIZE - n);
     buffer[n] = 0;
 
-//    logger::log("--- Buffer content ---");
-//    logger::log(buffer);
-//    logger::log("--- Buffer content end ---");
+#ifdef DEBUG
+    logger::log(query_id);
+#endif
+
 
     bool is_get = buffer[0] == 'G';
-    string path;
-    for (int i = 4 + !is_get; !isspace(buffer[i]); i++)
-        path += buffer[i];
 
-    map<string, string> query;
-    if (path.find('?') != string::npos)
+    char* path = buffer + 4 + !is_get;
+    char* ptr = path;
+
+    ptr++; // skip slash
+    char *id_ptr = NULL;
+    EntityType entity_type;
+    if (*ptr == 'u')
     {
-        auto parts = Utility::split(path, '?');
-        path = parts[0];
-        auto quieries = Utility::split(parts[1], '&');
-        for (auto &pair : quieries)
-        {
-            if (!pair.empty())
-            {
-                auto p = Utility::split(pair, '=');
-                query[p[0]] = p.size() > 1 ? Utility::urlDecode(p[1]) : "";
-            }
-        }
+        entity_type = UserEntity;
+        ptr += strlen("users/");
+    }
+    else if (*ptr == 'v')
+    {
+        entity_type = VisitEntity;
+        ptr += strlen("visits/");
+    }
+    else
+    {
+        entity_type = LocationEntity;
+        ptr += strlen("locations/");
+    }
+
+    id_ptr = ptr;
+    while (*ptr != 0 && *ptr != '/' && *ptr != ' ' && *ptr != '?')
+        ptr++;
+
+    if (ptr - id_ptr > INT_MAX_LENGTH) // too large id, invalid int
+    {
+        RouteProcessor(socket_fd).handle_404();
+        return 0;
     }
 
     if (is_get)
     {
-        state.gets_count++;
-        logger::log(state.gets_count);
-        if (Utility::startsWith(path, "/users/"))
+        char *from_date = NULL;
+        char *to_date = NULL;
+        char *country = NULL;
+        char *to_distance = NULL;
+        char *from_age = NULL;
+        char *to_age = NULL;
+        char *gender = NULL;
+
+        bool is_locations_avg = false;
+        bool is_user_visits = false;
+
+        if (*ptr == '/')
         {
-            if (Utility::endsWith(path, "/visits"))
+            *ptr = 0;
+            ptr++; // skip slash
+            if (*ptr == 'a')
             {
-                auto user_id = path.substr(strlen("/users/"));
-                user_id.resize((int) user_id.size() - strlen("/visits"));
-                auto processor = GetUserVisitsRouteProcessor();
-                processor.process(user_id.c_str(), query["fromDate"].c_str(), query["toDate"].c_str(),
-                                  query["country"].c_str(), query["toDistance"].c_str());
-                response = processor.get_http_result();
+                is_locations_avg = true;
+                ptr += strlen("avg");
             }
             else
             {
-                auto user_id = path.substr(strlen("/users/"));
-                auto processor = GetEntityRouteProcessor();
-                processor.process("users", user_id.c_str());
-                response = processor.get_http_result();
-            }
-        }
-        else if (Utility::startsWith(path, "/locations/"))
-        {
-            if (Utility::endsWith(path, "/avg"))
-            {
-                auto location_id = path.substr(strlen("/locations/"));
-                location_id.resize((int) location_id.size() - strlen("/avg"));
-                auto processor = GetLocationAvgRouteProcessor();
-                processor.process(location_id.c_str(), query["fromDate"].c_str(), query["toDate"].c_str(),
-                                  query["fromAge"].c_str(), query["toAge"].c_str(), query["gender"].c_str());
-                response = processor.get_http_result();
-            }
-            else
-            {
-                auto location_id = path.substr(strlen("/locations/"));
-                auto processor = GetEntityRouteProcessor();
-                processor.process("locations", location_id.c_str());
-                response = processor.get_http_result();
-            }
-        }
-        else if (Utility::startsWith(path, "/visits/"))
-        {
-            auto visit_id = path.substr(strlen("/visits/"));
-            auto processor = GetEntityRouteProcessor();
-            processor.process("visits", visit_id.c_str());
-            response = processor.get_http_result();
-        }
-        logger::log(state.gets_count);
-    }
-    else
-    {
-        int body_start_pos = 0;
-        for (int i = 3; i < n; i++)
-        {
-            if (buffer[i] == '\n' && buffer[i - 1] == '\n' ||
-                buffer[i] == '\n' && buffer[i - 1] == '\r' && buffer[i - 2] == '\n' && buffer[i - 3] == '\r')
-            {
-                body_start_pos = i + 1;
-                break;
+                is_user_visits = true;
+                ptr += strlen("visits");
             }
         }
 
-        for (auto &entity_name : vector<string> {"users", "locations", "visits"})
+        if (*ptr == '?')
         {
-            if (Utility::startsWith(path, "/" + entity_name + "/"))
+            // TODO: check 404 before
+            //if (is_locations_avg)
+            //    n += read_buf(socket_fd, buffer + n, M_LOCATIONS_AVG_PARAMS_MAX_LENGTH);
+            //else if (is_user_visits)
+            //    n += read_buf(socket_fd, buffer + n, M_USERS_VISITS_PARAMS_MAX_LENGTH);
+            //buffer[n] = ' ';
+
+            //n += read_buf(socket_fd, buffer + n, M_BUFFER_MAX_SIZE - n);
+            //buffer[n] = 0;
+
+
+            while (*ptr == '?' || *ptr == '&')
             {
-                auto processor = PostEntityRouteProcessor();
-                auto entity_id = path.substr(entity_name.size() + 2);
-                processor.process(entity_name.c_str(), entity_id.c_str(), buffer + body_start_pos);
-                response = processor.get_http_result();
+                *ptr = 0;
+                ptr++;
+
+#define PARSE_GETS_1(prop, str_prop) { ptr += strlen(str_prop) + 1; prop = ptr; while (*ptr != '&' && *ptr != ' ') ptr++; }
+
+                if (ptr[0] == 'g')      PARSE_GETS_1(gender, "gender")
+                else if (ptr[0] == 'c') PARSE_GETS_1(country, "country")
+                else if (ptr[2] == 'A') PARSE_GETS_1(to_age, "toAge")
+                else if (ptr[4] == 'D') PARSE_GETS_1(from_date, "fromDate")
+                else if (ptr[4] == 'A') PARSE_GETS_1(from_age, "fromAge")
+                else if (ptr[3] == 'a') PARSE_GETS_1(to_date, "toDate")
+                else if (ptr[3] == 'i') PARSE_GETS_1(to_distance, "toDistance")
             }
         }
+        *ptr = 0;
+
+        if (entity_type == UserEntity)
+        {
+            if (is_user_visits)
+            {
+                auto processor = GetUserVisitsRouteProcessor(socket_fd);
+                processor.process(id_ptr, from_date, to_date, country, to_distance);
+            }
+            else
+            {
+                auto processor = GetEntityRouteProcessor(socket_fd);
+                processor.process(entity_type, id_ptr);
+            }
+        }
+        else if (entity_type == LocationEntity)
+        {
+            if (is_locations_avg)
+            {
+                auto processor = GetLocationAvgRouteProcessor(socket_fd);
+                processor.process(id_ptr, from_date, to_date, from_age, to_age, gender);
+            }
+            else
+            {
+                auto processor = GetEntityRouteProcessor(socket_fd);
+                processor.process(LocationEntity, id_ptr);
+            }
+        }
+        else
+        {
+            auto processor = GetEntityRouteProcessor(socket_fd);
+            processor.process(VisitEntity, id_ptr);
+        }
+    }
+    else
+    {
+        //logger::log("POST");
+        //abort();
+
+        // TODO: check 404 before
+        //n += read_buf(socket_fd, buffer + n, M_BUFFER_MAX_SIZE - n);
+        //buffer[n] = 0;
+
+        *ptr = 0;
+        while (!(ptr[0] == '\n' && ptr[-1] == '\n' || ptr[0] == '\n' && ptr[-1] == '\r' && ptr[-2] == '\n' && ptr[-3] == '\r'))
+            ptr++;
+        char* body_ptr = ptr + 1;
+
+        auto processor = PostEntityRouteProcessor(socket_fd);
+        processor.process(entity_type, id_ptr, body_ptr);
     }
 
 
     if (send(socket_fd, response.c_str(), response.size(), 0) < 0)
     {
         perror("write()");
-        return 0;
+        abort();
     }
 
-    close(socket_fd);
+    if (!is_get)
+        close(socket_fd);
+    //logger::log(query_id);
+    query_id++;
     return 0;
 }
 
 int handle_request(int cliefd)
 {
-    if (THREADS_COUNT == 0)
+    if (M_THREADS_COUNT == 0)
         return handle_request1(cliefd);
 
     thread_pool.add_job([cliefd]() {

@@ -12,19 +12,18 @@ using namespace std;
 class PostEntityRouteProcessor : public RouteProcessor
 {
 public:
-    void process(const char* entity_name, const char* str_id, const char* request_body)
+    explicit PostEntityRouteProcessor(int socket_fd) : RouteProcessor(socket_fd)
+    {
+    }
+
+    void process(EntityType entity_type, const char* str_id, const char* request_body)
     {
         json::Object json;
-        try
-        {
-            json.parse_simple_object(request_body, (int) strlen(request_body));
-        }
-        catch(const exception &e)
+        if (!json.parse_simple_object(request_body, (int) strlen(request_body)))
         {
             handle_400();
             return;
         }
-        EntityType entity_type = entity_name[0] == 'u' ? UserEntity : entity_name[0] == 'l' ? LocationEntity : VisitEntity;
 
         if (strcmp(str_id, "new") != 0 && !Utility::is_int(str_id))
         {
@@ -68,7 +67,7 @@ public:
         {
             state.update_entity(entity.get());
         }
-        body += "{}";
+        handle_200();
     }
 };
 

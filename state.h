@@ -1,7 +1,9 @@
 #ifndef HIGHLOAD_DB_H
 #define HIGHLOAD_DB_H
 
-#define HASH_TABLE_MAX_SIZE (1 << 20)
+#define HASH_TABLE_USERS_MAX_SIZE (1 << 20)
+#define HASH_TABLE_LOCATIONS_MAX_SIZE (1 << 20)
+#define HASH_TABLE_VISITS_MAX_SIZE (1 << 22)
 
 #include <map>
 #include <string>
@@ -42,11 +44,11 @@ public:
 class State
 {
 public:
-    FastIntHashMap<User*, HASH_TABLE_MAX_SIZE> users;
-    FastIntHashMap<Location*, HASH_TABLE_MAX_SIZE> locations;
-    FastIntHashMap<Visit*, HASH_TABLE_MAX_SIZE> visits;
-    FastIntHashMap<vector<Visit*>, HASH_TABLE_MAX_SIZE> user_visits;
-    FastIntHashMap<vector<Visit*>, HASH_TABLE_MAX_SIZE> location_visits;
+    FastIntHashMap<User*, HASH_TABLE_USERS_MAX_SIZE> users;
+    FastIntHashMap<Location*, HASH_TABLE_LOCATIONS_MAX_SIZE> locations;
+    FastIntHashMap<Visit*, HASH_TABLE_VISITS_MAX_SIZE> visits;
+    FastIntHashMap<vector<Visit*>, HASH_TABLE_USERS_MAX_SIZE> user_visits;
+    FastIntHashMap<vector<Visit*>, HASH_TABLE_LOCATIONS_MAX_SIZE> location_visits;
 
     bool has_entity(EntityType type, int id)
     {
@@ -211,17 +213,10 @@ public:
                     while (start_pos < str.size())
                     {
                         json::Object json;
-                        try
-                        {
-                            json.parse_simple_object(str.c_str(), (int) str.size(), start_pos, start_pos);
-                        }
-                        catch (const json::json_parse_error &e)
+                        if (!json.parse_simple_object(str.c_str(), (int) str.size(), start_pos, start_pos))
                         {
                             logger::error("JSON parse error");
-                            logger::log(e.what());
-                            auto pos = e.get_pos() + start_pos;
-                            logger::log("..." + str.substr(max(0, pos - 100), 200));
-                            logger::log("..." + str.substr(pos, 100));
+                            logger::log("..." + str.substr(start_pos, 250));
                             exit(1);
                         }
                         start_pos++;
@@ -249,9 +244,6 @@ public:
         logger::log((string)"Total number of locations: " + to_string(entities_count[LocationEntity]));
         logger::log((string)"Total number of visits: " + to_string(entities_count[VisitEntity]));
     }
-
-    string log;
-    int gets_count;
 };
 
 extern State state;

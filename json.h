@@ -1,6 +1,8 @@
 #ifndef HIGHLOAD_JSON_H
 #define HIGHLOAD_JSON_H
 
+#define JSON_USE_EXCEPTIONS false
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -14,6 +16,7 @@ using namespace std;
 
 namespace json
 {
+#if JSON_USE_EXCEPTIONS
     class json_parse_error : public runtime_error
     {
         string _msg;
@@ -38,6 +41,9 @@ namespace json
             return (const char*)_what_cache; // TODO: memory leak
         }
     };
+#else
+
+#endif
 
 
     class Object;
@@ -66,15 +72,15 @@ namespace json
 
         ~Value()
         {
-            if (_val != NULL)
-                delete _val;
+            //delete _val; // skip memory leak
         }
 
         Value(const Value &value)
         {
             _type = value._type;
             if (value._val != NULL)
-                _copy_value(value._val, 0, strlen(value._val));
+                //_copy_value(value._val, 0, strlen(value._val));
+                _val = value._val;
             else
                 _val = NULL;
             _int_val = value._int_val;
@@ -100,7 +106,7 @@ namespace json
             return _type;
         }
 
-        explicit operator const char*() const
+        explicit operator char*() const
         {
             assert(_type == StringVal);
             return _val;
@@ -117,6 +123,7 @@ namespace json
 
     class Object
     {
+#if JSON_USE_EXCEPTIONS
         void _expect(const char *str, int pos, char expected)
         {
             if (str[pos] != expected)
@@ -129,10 +136,15 @@ namespace json
                 throw json_parse_error((string)"expected '" + expected + "', but found '" + en + "'", pos);
             }
         }
+#else
+#define _expect(str, pos, expected) if (str[pos] != (expected)) goto fail;
+#endif
 
-        void _parse_simple_object(const char *str, int n, int &end_pos)
+
+        bool _parse_simple_object(const char *str, int n, int &end_pos)
         {
             int pos = 0;
+            char *key = NULL;
 
             while (isspace(str[pos])) pos++;
 
@@ -142,16 +154,18 @@ namespace json
 
             while (str[pos] != '}')
             {
-                string key;
+                key = NULL;
                 Value value;
 
                 _expect(str, pos++, '"');
 
-                while(pos < n && str[pos] != '"')
-                {
-                    key += str[pos];
+                int key_start_pos = pos;
+                while (pos < n && str[pos] != '"')
                     pos++;
-                }
+                key = new char[pos - key_start_pos + 1];
+                memcpy(key, str + key_start_pos, pos - key_start_pos);
+                key[pos - key_start_pos] = 0;
+
                 _expect(str, pos++, '"');
 
                 while (isspace(str[pos])) pos++;
@@ -179,11 +193,9 @@ namespace json
                     _expect(str, pos++, '"');
 
                     int value_start_pos = pos;
-                    while(pos < n && str[pos] != '"')
-                    {
-                        value._val += str[pos];
+                    while (pos < n && str[pos] != '"')
                         pos++;
-                    }
+
                     value._copy_value(str, value_start_pos, pos);
 
                     _expect(str, pos++, '"');
@@ -200,21 +212,33 @@ namespace json
                 properties.emplace_back(key, value);
             }
             end_pos = pos;
+
+            return true;
+fail:
+            delete key;
+            return false;
         }
 
     public:
-        vector<pair<string, Value> > properties;
+        vector<pair<char*, Value> > properties;
 
-        void parse_simple_object(const char* str, int length)
+        bool parse_simple_object(const char* str, int length)
         {
             int end_pos;
-            _parse_simple_object(str, length, end_pos);
+            return _parse_simple_object(str, length, end_pos);
         }
 
-        void parse_simple_object(const char* str, int length, int start_pos, int &end_pos)
+        bool parse_simple_object(const char* str, int length, int start_pos, int &end_pos)
         {
-            _parse_simple_object(str + start_pos, length - start_pos, end_pos);
+            auto ret = _parse_simple_object(str + start_pos, length - start_pos, end_pos);
             end_pos += start_pos;
+            return ret;
+        }
+
+        ~Object()
+        {
+            for (auto &pair : properties)
+                delete pair.first;
         }
     };
 };

@@ -12,34 +12,34 @@ class Location : public Entity
 {
 public:
     int id;
-    string place;
-    string country;
-    string city;
+    char* place;
+    char* country;
+    char* city;
     int distance;
-
-    string to_json() const override
-    {
-        return (string) "{\"id\":" + to_string(id) + ",\"place\":\"" + place + "\",\"country\":\"" + country +
-               "\",\"city\":\"" + city + "\",\"distance\":" + to_string(distance) + '}';
-    }
 
     bool parse(const json::Object &json_obj, bool require_all) override
     {
         int props_count = 0;
         for (auto &pair : json_obj.properties)
         {
-            auto &key = pair.first;
-            auto &val = pair.second;
+            char* key = pair.first;
+            const json::Value &val = pair.second;
 
             TRY_PARSE_INT_VAL(id)
             TRY_PARSE_STR_VAL(place)
             TRY_PARSE_STR_VAL(country)
             TRY_PARSE_STR_VAL(city)
             TRY_PARSE_INT_VAL(distance)
-            country = _fix_unicode(country);
         }
+
         if (require_all && props_count != 5)
             return false;
+
+        _fix_unicode(country);
+
+        static thread_local char buf[512] = {};
+        sprintf(buf, "{\"id\":%d,\"place\":\"%s\",\"country\":\"%s\",\"city\":\"%s\",\"distance\":%d}", id, place, country, city, distance);
+        TRY_PARSE_COPY_JSON(json, buf)
 
         return true;
     }

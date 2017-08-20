@@ -23,8 +23,8 @@ EXPOSE 80
 # http://derekmolloy.ie/hello-world-introductions-to-cmake/
 
 CMD     echo 'cmake...' &&\
-	cmake -DCMAKE_BUILD_TYPE=Release . &&\
+	cmake -DCMAKE_BUILD_TYPE=Release . > /dev/null &&\
 	echo 'make...' &&\
-	make &&\
+	make > /dev/null &&\
 	echo 'Done.' &&\
 	./highload

@@ -17,26 +17,20 @@ public:
     };
 
     int id;
-    string email;
-    string first_name;
-    string last_name;
+    char* email;
+    char* first_name;
+    char* last_name;
     UserGender gender;
     int birth_date;
 
-    string to_json() const override
-    {
-        return (string) "{\"id\":" + to_string(id) + ",\"email\":\"" + email + "\",\"first_name\":\"" + first_name +
-               "\",\"last_name\":\"" + last_name + "\",\"gender\":\"" + (gender == Male ? 'm' : 'f') +
-               "\",\"birth_date\":" + to_string(birth_date) + '}';
-    }
 
     bool parse(const json::Object &json_obj, bool require_all) override
     {
         int props_count = 0;
         for (auto &pair : json_obj.properties)
         {
-            auto &key = pair.first;
-            auto &val = pair.second;
+            char* key = pair.first;
+            const json::Value &val = pair.second;
 
             TRY_PARSE_INT_VAL(id)
             TRY_PARSE_STR_VAL(email)
@@ -48,6 +42,11 @@ public:
         if (require_all && props_count != 6)
             return false;
 
+        static thread_local char buf[512] = {};
+        sprintf(buf, "{\"id\":%d,\"email\":\"%s\",\"first_name\":\"%s\",\"last_name\":\"%s\",\"gender\":\"%c\",\"birth_date\":%d}",
+                id, email, first_name, last_name, gender == Male ? 'm' : 'f', birth_date);
+        TRY_PARSE_COPY_JSON(json, buf)
+        
         return true;
     }
 };

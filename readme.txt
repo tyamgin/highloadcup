@@ -34,3 +34,7 @@ curl --data "{\"id\":232323,\"user\":23,\"location\":46,\"mark\":3,\"visited_at\
 
 curl --data "{\"country\":\"\u0418\u0437\u0440\u0430\u0438\u043b\u044c\"}" http://localhost:8080/locations/46
 
+for i in {1..3}; do
+    sudo docker run -v $(pwd):/var/loadtest --net host -it --rm direvius/yandex-tank -c load/load_$i.ini
+done
+

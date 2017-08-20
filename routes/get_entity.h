@@ -11,7 +11,11 @@ using namespace std;
 class GetEntityRouteProcessor : public RouteProcessor
 {
 public:
-    void process(const char* entity_name, const char* str_id)
+    explicit GetEntityRouteProcessor(int socket_fd) : RouteProcessor(socket_fd)
+    {
+    }
+
+    void process(EntityType entity_type, const char *str_id)
     {
         if (!Utility::is_int(str_id))
         {
@@ -19,7 +23,6 @@ public:
             return;
         }
         int id = atoi(str_id);
-        EntityType entity_type = entity_name[0] == 'u' ? UserEntity : entity_name[0] == 'l' ? LocationEntity : VisitEntity;
 
         if (!state.has_entity(entity_type, id))
         {
@@ -27,7 +30,8 @@ public:
             return;
         }
 
-        body += state.get_entity(entity_type, id)->to_json();
+        char *json = state.get_entity(entity_type, id)->json;
+        handle_200(json, strlen(json));
     }
 };
 

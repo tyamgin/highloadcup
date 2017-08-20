@@ -17,30 +17,28 @@ public:
     int visited_at;
     int8_t mark;
 
-    string to_json() const override
-    {
-        return (string) "{\"id\":" + to_string(id) + ",\"location\":" + to_string(location) + ",\"user\":" +
-               to_string(user) + ",\"visited_at\":" + to_string(visited_at) + ",\"mark\":" + to_string(mark) + '}';
-    }
-
     bool parse(const json::Object &json_obj, bool require_all) override
     {
         int props_count = 0;
         for (auto &pair : json_obj.properties)
         {
-            auto &key = pair.first;
-            auto &val = pair.second;
+            const char* key = pair.first;
+            const json::Value &val = pair.second;
 
             TRY_PARSE_INT_VAL(id)
             TRY_PARSE_INT_VAL(location)
             TRY_PARSE_INT_VAL(user)
             TRY_PARSE_INT_VAL(visited_at)
             TRY_PARSE_INT_VAL(mark)
-            if (mark < 0 || mark > 5)
-                return false;
         }
+        if (mark < 0 || mark > 5)
+            return false;
         if (require_all && props_count != 5)
             return false;
+
+        static thread_local char buf[512] = {};
+        sprintf(buf, "{\"id\":%d,\"location\":%d,\"user\":%d,\"visited_at\":%d,\"mark\":%d}", id, location, user, visited_at, (int) mark);
+        TRY_PARSE_COPY_JSON(json, buf)
 
         return true;
     }
