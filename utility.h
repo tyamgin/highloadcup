@@ -9,6 +9,10 @@
 
 using namespace std;
 
+typedef unsigned long long HashType;
+
+#define M_STRING_HASH_BASE 263
+
 class Utility
 {
 public:
@@ -30,45 +34,6 @@ public:
 
         auto ll_val = atoll(str);
         return ll_val >= INT_MIN && ll_val <= INT_MAX;
-    }
-
-    static bool startsWith(const string &subj, const string &substr)
-    {
-        if (substr.size() > subj.size())
-            return false;
-
-        for(int i = 0; i < (int) substr.size(); i++)
-            if (substr[i] != subj[i])
-                return false;
-        return true;
-    }
-
-    static bool endsWith(const string &subj, const string &substr)
-    {
-        if (substr.size() > subj.size())
-            return false;
-
-        for(int i = 0; i < (int) substr.size(); i++)
-            if (substr[i] != subj[(int)subj.size() - (int)substr.size() + i])
-                return false;
-        return true;
-    }
-
-    template<typename Out>
-    static void split(const string &str, char delim, Out result)
-    {
-        stringstream ss;
-        ss.str(str);
-        string item;
-        while (getline(ss, item, delim))
-            *(result++) = item;
-    }
-
-    static vector<string> split(const string &s, char delim)
-    {
-        std::vector<string> elems;
-        split(s, delim, back_inserter(elems));
-        return elems;
     }
 
     static string urlDecode(const string &_src)
@@ -108,6 +73,48 @@ public:
             }
         }
         return res;
+    }
+
+    static HashType stringUrlDecodedHash(const char* src)
+    {
+        char a, b;
+        HashType ret = 0, p = 1;
+
+        while (*src)
+        {
+            if ((*src == '%') &&
+                ((a = src[1]) && (b = src[2])) &&
+                (isxdigit(a) && isxdigit(b)))
+            {
+                if (a >= 'a')
+                    a -= 'a' - 'A';
+                if (a >= 'A')
+                    a -= ('A' - 10);
+                else
+                    a -= '0';
+                if (b >= 'a')
+                    b -= 'a' - 'A';
+                if (b >= 'A')
+                    b -= ('A' - 10);
+                else
+                    b -= '0';
+
+                ret = ret * p + HashType(16 * a + b);
+
+                src += 3;
+            }
+            else if (*src == '+')
+            {
+                ret = ret * p + (HashType) static_cast<unsigned char>(' ');
+                src++;
+            }
+            else
+            {
+                ret = ret * p + (HashType) static_cast<unsigned char>(*src++);
+            }
+            p *= M_STRING_HASH_BASE;
+        }
+        return ret;
     }
 };
 

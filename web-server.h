@@ -1,5 +1,6 @@
 /**
  * Based on https://banu.com/blog/2/how-to-use-epoll-a-complete-example-in-c/
+ * https://stackoverflow.com/questions/6954489/c-whats-the-way-to-make-a-poolthread-with-pthreads - thread pool
  */
 
 #ifndef HIGHLOAD_WEB_SERVER_H
@@ -14,21 +15,27 @@
 #include <functional>
 #include <netinet/in.h>
 #include <fcntl.h>
-
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
-#include <errno.h>
+#include <cerrno>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
+#include <queue>
 
 #include "logger.h"
 
 using namespace std;
 
-#define M_EPOLL_MAX_EVENTS 1024
+#ifndef EPOLLEXCLUSIVE
+#define EPOLLEXCLUSIVE (1 << 28)
+#endif
+
+#define M_FLAGS (EPOLLIN | EPOLLEXCLUSIVE | EPOLLET)
+
+#define M_EPOLL_MAX_EVENTS 32
+#define M_THREADS_COUNT 4
 
 class WebServer
 {
@@ -36,15 +43,114 @@ class WebServer
 
     uint16_t _port;
     Handler _handler;
+    int sfd, efd;
 
-public:
-    explicit WebServer(uint16_t port, Handler handler)
+
+    static void* _worker_main(void *context)
     {
-        _port = port;
-        _handler = handler;
+        ((WebServer*) context)->_worker_main();
+        return NULL;
     }
 
+    void _worker_main()
+    {
+        //pthread_detach(pthread_self());
 
+        int s;
+        epoll_event event{};
+        epoll_event *events = (epoll_event *) calloc(M_EPOLL_MAX_EVENTS, sizeof event);
+
+        // The event loop
+        while (1)
+        {
+
+#ifdef DEBUG
+            //logger::log(to_string((long long) pthread_self()) + "| waiting");
+#endif
+            int n = epoll_wait(efd, events, M_EPOLL_MAX_EVENTS, -1);
+
+#ifdef DEBUG
+            logger::log(to_string((long long) pthread_self()) + "| wake ");
+#endif
+
+            if (n < 0)
+            {
+                perror("epoll_wait");
+                //abort();
+            }
+#ifdef DEBUG
+            //logger::log(to_string(n) + " in queue");
+#endif
+            for (int i = 0; i < n; i++)
+            {
+                auto socket_fd = events[i].data.fd;
+#ifdef DEBUG
+                logger::log(to_string((long long) pthread_self()) + "| sock in: " + to_string(socket_fd));
+#endif
+                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
+                {
+                    // An error has occured on this fd, or the socket is not
+                    // ready for reading (why were we notified then?)
+                    logger::error("epoll error");
+                    close(events[i].data.fd);
+                    abort();
+                }
+                else if (sfd == socket_fd)
+                {
+                    // We have a notification on the listening socket, which
+                    // means one or more incoming connections.
+                    while (1)
+                    {
+                        sockaddr in_addr{};
+                        socklen_t in_len;
+                        in_len = sizeof in_addr;
+
+                        int infd = accept4(sfd, &in_addr, &in_len, SOCK_NONBLOCK);
+                        if (infd == -1)
+                        {
+                            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                            {
+                                // We have processed all incoming connections.
+                                break;
+                            }
+
+                            perror("accept");
+                            break;
+                        }
+#ifdef DEBUG
+                        logger::log(to_string((long long) pthread_self()) + "| accepted: " + to_string(infd));
+#endif
+
+                        // Make the incoming socket non-blocking and add it to the list of fds to monitor.
+                        _make_socket_non_blocking(infd);
+                        _make_socket_nodelay(infd);
+
+                        event.data.fd = infd;
+                        event.events = M_FLAGS;
+                        s = epoll_ctl(efd, EPOLL_CTL_ADD, infd, &event);
+                        if (s == -1)
+                        {
+                            perror("epoll_ctl add");
+                            abort();
+                        }
+                    }
+                }
+                else
+                {
+                    // We have data on the fd waiting to be read. Read and
+                    // display it. We must read whatever data is available
+                    // completely, as we are running in edge-triggered mode
+                    // and won't get a notification again for the same
+                    // data.
+
+
+                    _handler(socket_fd);
+                }
+            }
+        }
+
+        free(events);
+    }
 
     int _create_and_bind()
     {
@@ -124,12 +230,16 @@ public:
         }
     }
 
+public:
+    explicit WebServer(uint16_t port, Handler handler)
+    {
+        _port = port;
+        _handler = handler;
+    }
+
     int start()
     {
-        int sfd, s;
-        int efd;
-        epoll_event event{};
-        epoll_event *events;
+        int s;
 
         sfd = _create_and_bind();
         if (sfd == -1)
@@ -148,15 +258,19 @@ public:
             abort();
         }
 
+        //efd = epoll_create(M_EPOLL_MAX_EVENTS);
         efd = epoll_create1(0);
+
         if (efd == -1)
         {
             perror("epoll_create");
             abort();
         }
 
+
+        epoll_event event{};
         event.data.fd = sfd;
-        event.events = EPOLLIN | EPOLLET;
+        event.events = M_FLAGS;
         s = epoll_ctl(efd, EPOLL_CTL_ADD, sfd, &event);
         if (s == -1)
         {
@@ -165,115 +279,19 @@ public:
         }
 
         // Buffer where events are returned
-        events = (epoll_event*) calloc(M_EPOLL_MAX_EVENTS, sizeof event);
 
-        // The event loop
-        while (1)
-        {
-            int n, i;
+#if M_THREADS_COUNT
+        pthread_t threads[M_THREADS_COUNT];
 
-#ifdef DEBUG
-            logger::log("waiting");
+        for (int i = 0; i < M_THREADS_COUNT; i++)
+            pthread_create(&threads[i], NULL, _worker_main, this);
+
+        for (int i = 0; i < M_THREADS_COUNT; i++)
+            pthread_join(threads[i], NULL);
+#else
+        _worker_main(this);
 #endif
-            n = epoll_wait(efd, events, M_EPOLL_MAX_EVENTS, -1);
-#ifdef DEBUG
-            logger::log(to_string(n) + " in queue");
-#endif
-            for (i = 0; i < n; i++)
-            {
-                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
-                {
-                    // An error has occured on this fd, or the socket is not
-                    // ready for reading (why were we notified then?)
-                    logger::error("epoll error");
-                    close(events[i].data.fd);
-                    abort();
-                }
-
-                else if (sfd == events[i].data.fd)
-                {
-                    // We have a notification on the listening socket, which
-                    // means one or more incoming connections.
-                    while (1)
-                    {
-                        sockaddr in_addr{};
-                        socklen_t in_len;
-                        in_len = sizeof in_addr;
-
-                        int infd = accept4(sfd, &in_addr, &in_len, SOCK_NONBLOCK);
-                        if (infd == -1)
-                        {
-                            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                            {
-                                // We have processed all incoming connections.
-                                break;
-                            }
-
-                            perror("accept");
-                            break;
-                        }
-
-                        // Make the incoming socket non-blocking and add it to the list of fds to monitor.
-                        _make_socket_non_blocking(infd);
-                        _make_socket_nodelay(infd);
-
-                        event.data.fd = infd;
-                        event.events = EPOLLIN | EPOLLET;
-                        s = epoll_ctl(efd, EPOLL_CTL_ADD, infd, &event);
-                        if (s == -1)
-                        {
-                            perror("epoll_ctl add");
-                            abort();
-                        }
-                    }
-                }
-                else
-                {
-                    // We have data on the fd waiting to be read. Read and
-                    // display it. We must read whatever data is available
-                    // completely, as we are running in edge-triggered mode
-                    // and won't get a notification again for the same
-                    // data.
-                    int r = _handler(events[i].data.fd);
-//                    if (r < 0)
-//                    {
-//                        logger::log("cl1");
-//                        close(events[i].data.fd);
-//                        continue;
-//                    }
-//                    close(events[i].data.fd);
-
-
-//                    static thread_local char buf[1 << 10];
-//                    while (1)
-//                    {
-//                        s = read(events[i].data.fd, buf, sizeof(buf));
-//                        if (s == 0)
-//                        {
-//                            //logger::log("read s 0");
-//                            //abort();
-//                            logger::log("cl2");
-//                            close(events[i].data.fd);
-//                            break;
-//                        }
-//                        if (s == -1)
-//                        {
-//                            if (errno == EAGAIN)
-//                            {
-//                                close(events[i].data.fd);
-//                                break;
-//                            }
-//                            logger::log("read 0");
-//                            abort();
-//                        }
-//                    }
-                }
-            }
-        }
-
-        free(events);
-        close(sfd);
-        return EXIT_SUCCESS;
+        //close(sfd);
     }
 };
 

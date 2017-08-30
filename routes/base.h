@@ -5,9 +5,11 @@
 
 using namespace std;
 
-#define M_RESPONSE_404 "HTTP/1.1 404 Not Found\nContent-Type: application/json; charset=utf-8\nContent-Length: 2\n\n{}"
-#define M_RESPONSE_400 "HTTP/1.1 400 Bad Request\nContent-Type: application/json; charset=utf-8\nContent-Length: 2\n\n{}"
-#define M_RESPONSE_200_PREFIX "HTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nContent-Length: "
+#define M_RESPONSE_404 "HTTP/1.1 404 Not Found\nContent-Type: application/json; charset=utf-8\nConnection: Keep-Alive\nContent-Length: 2\n\n{}"
+#define M_RESPONSE_400 "HTTP/1.1 400 Bad Request\nContent-Type: application/json; charset=utf-8\nConnection: Keep-Alive\nContent-Length: 2\n\n{}"
+#define M_RESPONSE_200_PREFIX "HTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nConnection: Keep-Alive\nContent-Length: "
+
+#define M_RESPONSE_MAX_SIZE 100000
 
 class RouteProcessor
 {
@@ -63,7 +65,7 @@ public:
         int prefix_length = sizeof(M_RESPONSE_200_PREFIX) - 1;
         if (headers == NULL)
         {
-            headers = (char*) malloc(prefix_length + 100000);
+            headers = (char*) malloc(prefix_length + M_RESPONSE_MAX_SIZE);
             strcpy(headers, M_RESPONSE_200_PREFIX);
         }
 

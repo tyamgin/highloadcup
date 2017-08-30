@@ -9,30 +9,12 @@
 #include "routes/get_user_visits.h"
 #include "routes/get_location_avg.h"
 #include "routes/post_entity.h"
-#include "thread_pool.h"
 
 using namespace std;
 
 #define INT_MAX_LENGTH 11
-
-#define M_LOCATIONS_AVG_PARAMS_MAX_LENGTH ((\
-        sizeof("fromDate") + INT_MAX_LENGTH + 1 +\
-        sizeof("toDate")   + INT_MAX_LENGTH + 1 +\
-        sizeof("fromAge")  + INT_MAX_LENGTH + 1 +\
-        sizeof("toDate")   + INT_MAX_LENGTH + 1 +\
-        sizeof("gender")   + 1) + 1)
-
-#define M_USERS_VISITS_PARAMS_MAX_LENGTH ((\
-        sizeof("fromDate")   + INT_MAX_LENGTH + 1 +\
-        sizeof("toDate")     + INT_MAX_LENGTH + 1 +\
-        sizeof("toDistance") + INT_MAX_LENGTH + 1 +\
-        sizeof("country")    + 50 * 6) + 1) // 6 - urlencoded unicode
-
-#define M_THREADS_COUNT 0
 #define M_BUFFER_MAX_SIZE (1 << 12)
-#define M_BUFFER_FIRST_CHUNK_SIZE (31)
 
-ThreadPool thread_pool(M_THREADS_COUNT);
 
 ssize_t read_buf(int sfd, char* buf, size_t size)
 {
@@ -66,25 +48,23 @@ ssize_t read_buf(int sfd, char* buf, size_t size)
 }
 
 
-int handle_request1(int socket_fd)
+int handle_request(int socket_fd)
 {
     ssize_t n;
-    string response;
-
     static thread_local char buffer[M_BUFFER_MAX_SIZE];
 
     static int query_id = 1;
 
-
     n = read_buf(socket_fd, buffer, M_BUFFER_MAX_SIZE);
-    //n = read_buf(socket_fd, buffer, M_BUFFER_FIRST_CHUNK_SIZE);
     if (n <= 0)
         return -1;
-    //n += read_buf(socket_fd, buffer + n, M_BUFFER_MAX_SIZE - n);
+
     buffer[n] = 0;
 
 #ifdef DEBUG
-    logger::log(query_id);
+    logger::log(to_string((long long) pthread_self()) + "| Processing " + to_string(query_id) + " query, sock=" + to_string(socket_fd));
+//    if (socket_fd == 5)
+//        sleep(20);
 #endif
 
 
@@ -153,17 +133,6 @@ int handle_request1(int socket_fd)
 
         if (*ptr == '?')
         {
-            // TODO: check 404 before
-            //if (is_locations_avg)
-            //    n += read_buf(socket_fd, buffer + n, M_LOCATIONS_AVG_PARAMS_MAX_LENGTH);
-            //else if (is_user_visits)
-            //    n += read_buf(socket_fd, buffer + n, M_USERS_VISITS_PARAMS_MAX_LENGTH);
-            //buffer[n] = ' ';
-
-            //n += read_buf(socket_fd, buffer + n, M_BUFFER_MAX_SIZE - n);
-            //buffer[n] = 0;
-
-
             while (*ptr == '?' || *ptr == '&')
             {
                 *ptr = 0;
@@ -216,13 +185,6 @@ int handle_request1(int socket_fd)
     }
     else
     {
-        //logger::log("POST");
-        //abort();
-
-        // TODO: check 404 before
-        //n += read_buf(socket_fd, buffer + n, M_BUFFER_MAX_SIZE - n);
-        //buffer[n] = 0;
-
         *ptr = 0;
         while (!(ptr[0] == '\n' && ptr[-1] == '\n' || ptr[0] == '\n' && ptr[-1] == '\r' && ptr[-2] == '\n' && ptr[-3] == '\r'))
             ptr++;
@@ -232,28 +194,11 @@ int handle_request1(int socket_fd)
         processor.process(entity_type, id_ptr, body_ptr);
     }
 
-
-    if (send(socket_fd, response.c_str(), response.size(), 0) < 0)
-    {
-        perror("write()");
-        abort();
-    }
-
     if (!is_get)
         close(socket_fd);
     //logger::log(query_id);
     query_id++;
     return 0;
-}
-
-int handle_request(int cliefd)
-{
-    if (M_THREADS_COUNT == 0)
-        return handle_request1(cliefd);
-
-    thread_pool.add_job([cliefd]() {
-        handle_request1(cliefd);
-    });
 }
 
 int main(int argc, const char *argv[])
@@ -266,9 +211,6 @@ int main(int argc, const char *argv[])
 #else
     const int port = 80;
 #endif
-    logger::log("Starting thread pool...");
-    thread_pool.start();
-
 
     logger::log("Initializing server...");
     WebServer server(port, handle_request);
@@ -276,6 +218,6 @@ int main(int argc, const char *argv[])
     server.start();
     logger::log("Server stopped...");
 
-    thread_pool.join();
+    //thread_pool.join();
     return 0;
 }

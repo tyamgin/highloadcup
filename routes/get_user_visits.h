@@ -14,13 +14,7 @@ struct UserVisitItem
 {
     int8_t mark;
     int visited_at;
-    string place;
-
-    string to_json() const
-    {
-        return (string) "{\"mark\":" + to_string(mark) + ",\"visited_at\":" + to_string(visited_at) + ",\"place\":\"" +
-               place + "\"}";
-    }
+    const char* place;
 };
 
 class GetUserVisitsRouteProcessor : public RouteProcessor
@@ -67,7 +61,7 @@ public:
 
         vector<UserVisitItem> visits;
 
-        string s_country = Utility::urlDecode(country ? country : "");
+        auto country_hash = country ? Utility::stringUrlDecodedHash(country) : 0;
 
         for (auto &visit : state.user_visits[user->id])
         {
@@ -77,32 +71,54 @@ public:
 
                 if (location->distance <= to_distance)
                 {
-                    if (country == NULL || location->country == s_country)
+                    if (country == NULL || location->country_hash == country_hash)
                     {
                         visits.push_back({
-                                                 visit->mark,
-                                                 visit->visited_at,
-                                                 location->place
-                                         });
+                             visit->mark,
+                             visit->visited_at,
+                             location->place
+                        });
                     }
                 }
             }
         }
-        sort(visits.begin(), visits.end(), [](UserVisitItem &a, UserVisitItem &b) {
+        sort(visits.begin(), visits.end(), [](const UserVisitItem &a, const UserVisitItem &b) {
             return a.visited_at < b.visited_at;
         });
 
-        string body = "{\"visits\":[";
+        static thread_local char buf[M_RESPONSE_MAX_SIZE] = "{\"visits\":[";
+        char* ptr = buf + sizeof("{\"visits\":[") - 1;
+
         bool first = true;
         for (auto &visit : visits)
         {
             if (!first)
-                body += ",";
+                *ptr++ = ',';
             first = false;
-            body += visit.to_json();
+
+            memcpy(ptr, "{\"mark\":", 8);
+            ptr += 8;
+            *ptr++ = char(visit.mark + '0');
+
+            memcpy(ptr, ",\"visited_at\":", 14);
+            ptr += 14;
+
+            ptr += sprintf(ptr, "%d", visit.visited_at);
+
+            memcpy(ptr, ",\"place\":\"", 10);
+            ptr += 10;
+
+            size_t place_len = strlen(visit.place);
+            memcpy(ptr, visit.place, place_len);
+            ptr += place_len;
+
+            *ptr++ = '"';
+            *ptr++ = '}';
         }
-        body += "]}";
-        handle_200(body.c_str(), body.size());
+        *ptr++ = ']';
+        *ptr++ = '}';
+
+        handle_200(buf, ptr - buf);
     }
 };
 
