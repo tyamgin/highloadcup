@@ -40,8 +40,6 @@ public:
 
         if (country != prev_country)
         {
-            if (country[2] == 208 && country[3] == 168)
-                country=country;
             _fix_unicode(country);
             country_hash = 0;
             HashType p = 1;
@@ -49,9 +47,9 @@ public:
                 country_hash = country_hash * p + (HashType) static_cast<unsigned char>(*c), p *= M_STRING_HASH_BASE;
         }
 
-        static thread_local char buf[512] = {};
+        static thread_local char buf[1 << 12] = {};
         sprintf(buf, "{\"id\":%d,\"place\":\"%s\",\"country\":\"%s\",\"city\":\"%s\",\"distance\":%d}", id, place, country, city, distance);
-        TRY_PARSE_COPY_JSON(json, buf)
+        TRY_PARSE_COPY_JSON(response_cache, buf)
 
         return true;
     }

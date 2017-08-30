@@ -1,22 +1,14 @@
 #ifndef HIGHLOAD_LOGGER_H
 #define HIGHLOAD_LOGGER_H
 
-#include <iostream>
-using namespace std;
+#define M_LOG(expr) (std::cout << expr << std::endl)
+#define M_ERROR(expr) M_LOG(expr)
 
-namespace logger
-{
-    template<typename T>
-    void log(const T &s)
-    {
-        cout << s << endl;
-    }
+#ifdef DEBUG
+#define M_DEBUG_LOG(expr) M_LOG(expr)
+#else
+#define M_DEBUG_LOG(expr)
+#endif
 
-    template<typename T>
-    void error(const T &s)
-    {
-        cout << "!!! " << s << endl;
-    }
-}
 
 #endif //HIGHLOAD_LOGGER_H

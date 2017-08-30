@@ -30,8 +30,8 @@ public:
             return;
         }
 
-        char *json = state.get_entity(entity_type, id)->json;
-        handle_200(json, strlen(json));
+        char *response = state.get_entity(entity_type, id)->response_cache;
+        handle(response, strlen(response));
     }
 };
 

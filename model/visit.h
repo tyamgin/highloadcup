@@ -38,7 +38,7 @@ public:
 
         static thread_local char buf[512] = {};
         sprintf(buf, "{\"id\":%d,\"location\":%d,\"user\":%d,\"visited_at\":%d,\"mark\":%d}", id, location, user, visited_at, (int) mark);
-        TRY_PARSE_COPY_JSON(json, buf)
+        TRY_PARSE_COPY_JSON(response_cache, buf)
 
         return true;
     }

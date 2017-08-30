@@ -38,3 +38,5 @@ for i in {1..3}; do
     sudo docker run -v $(pwd):/var/loadtest --net host -it --rm direvius/yandex-tank -c load/load_$i.ini
 done
 
+
+sudo docker run -v $(pwd):/var/loadtest --net host -it --rm direvius/yandex-tank -c load/load_3.ini

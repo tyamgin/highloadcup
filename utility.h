@@ -9,6 +9,9 @@
 
 using namespace std;
 
+#define M_STRLEN(str) (sizeof(str) - 1)
+#define M_MEMCPY(dest, src) memcpy((dest), (src), sizeof((src)))
+
 typedef unsigned long long HashType;
 
 #define M_STRING_HASH_BASE 263
@@ -34,45 +37,6 @@ public:
 
         auto ll_val = atoll(str);
         return ll_val >= INT_MIN && ll_val <= INT_MAX;
-    }
-
-    static string urlDecode(const string &_src)
-    {
-        char a, b;
-        auto src = _src.c_str();
-        string res;
-        while (*src)
-        {
-            if ((*src == '%') &&
-                ((a = src[1]) && (b = src[2])) &&
-                (isxdigit(a) && isxdigit(b)))
-            {
-                if (a >= 'a')
-                    a -= 'a' - 'A';
-                if (a >= 'A')
-                    a -= ('A' - 10);
-                else
-                    a -= '0';
-                if (b >= 'a')
-                    b -= 'a' - 'A';
-                if (b >= 'A')
-                    b -= ('A' - 10);
-                else
-                    b -= '0';
-                res += 16 * a + b;
-                src += 3;
-            }
-            else if (*src == '+')
-            {
-                res += ' ';
-                src++;
-            }
-            else
-            {
-                res += *src++;
-            }
-        }
-        return res;
     }
 
     static HashType stringUrlDecodedHash(const char* src)
@@ -115,6 +79,11 @@ public:
             p *= M_STRING_HASH_BASE;
         }
         return ret;
+    }
+
+    static void system(const string &cmd)
+    {
+        int ret = ::system(cmd.c_str());
     }
 };
 

@@ -37,7 +37,7 @@ public:
         }
         int user_id = atoi(str_user_id);
 
-        if (!state.users.contains(user_id))
+        if (user_id >= M_USERS_MAX_ID || state.users[user_id] == NULL)
         {
             handle_404();
             return;
@@ -87,7 +87,7 @@ public:
         });
 
         static thread_local char buf[M_RESPONSE_MAX_SIZE] = "{\"visits\":[";
-        char* ptr = buf + sizeof("{\"visits\":[") - 1;
+        char* ptr = buf + M_STRLEN("{\"visits\":[");
 
         bool first = true;
         for (auto &visit : visits)

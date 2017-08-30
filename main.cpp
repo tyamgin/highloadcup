@@ -13,40 +13,30 @@
 using namespace std;
 
 #define INT_MAX_LENGTH 11
-#define M_BUFFER_MAX_SIZE (1 << 12)
-
+#define M_BUFFER_MAX_SIZE (1 << 13)
 
 ssize_t read_buf(int sfd, char* buf, size_t size)
 {
-    ssize_t n;
-    while (1)
+    auto n = recv(sfd, buf, size, 0);
+    if (n == -1)
     {
-        n = read(sfd, buf, size);
-        if (n == -1)
+        // If errno == EAGAIN, that means we have read all data. So go back to the main loop.
+        if (errno != EAGAIN)
         {
-            // If errno == EAGAIN, that means we have read all data. So go back to the main loop.
-            if (errno != EAGAIN)
-            {
-                perror("read");
-                abort();
-            }
-            // it's ok in generally, but abort anyway
-            //logger::log("n == -1");
-            //abort();
-            return -1;
+            perror("read");
+            abort();
         }
-        else if (n == 0)
-        {
-            //logger::log("n == 0");
-            //abort();
-            return -1;
-            // End of file. The remote has closed the connection.
-        }
-        break;
+        return -1;
+    }
+    else if (n == 0)
+    {
+#ifdef DEBUG
+        perror("read() = 0");
+#endif
+        return 0;
     }
     return n;
 }
-
 
 int handle_request(int socket_fd)
 {
@@ -57,16 +47,14 @@ int handle_request(int socket_fd)
 
     n = read_buf(socket_fd, buffer, M_BUFFER_MAX_SIZE);
     if (n <= 0)
+    {
+        M_DEBUG_LOG((long long) pthread_self() << "| miss sock=" << socket_fd);
         return -1;
+    }
 
     buffer[n] = 0;
 
-#ifdef DEBUG
-    logger::log(to_string((long long) pthread_self()) + "| Processing " + to_string(query_id) + " query, sock=" + to_string(socket_fd));
-//    if (socket_fd == 5)
-//        sleep(20);
-#endif
-
+    M_DEBUG_LOG((long long) pthread_self() << "| Processing " << query_id << " query, sock=" << socket_fd);
 
     bool is_get = buffer[0] == 'G';
 
@@ -79,17 +67,17 @@ int handle_request(int socket_fd)
     if (*ptr == 'u')
     {
         entity_type = UserEntity;
-        ptr += strlen("users/");
+        ptr += M_STRLEN("users/");
     }
     else if (*ptr == 'v')
     {
         entity_type = VisitEntity;
-        ptr += strlen("visits/");
+        ptr += M_STRLEN("visits/");
     }
     else
     {
         entity_type = LocationEntity;
-        ptr += strlen("locations/");
+        ptr += M_STRLEN("locations/");
     }
 
     id_ptr = ptr;
@@ -99,7 +87,7 @@ int handle_request(int socket_fd)
     if (ptr - id_ptr > INT_MAX_LENGTH) // too large id, invalid int
     {
         RouteProcessor(socket_fd).handle_404();
-        return 0;
+        goto exit;
     }
 
     if (is_get)
@@ -122,12 +110,12 @@ int handle_request(int socket_fd)
             if (*ptr == 'a')
             {
                 is_locations_avg = true;
-                ptr += strlen("avg");
+                ptr += M_STRLEN("avg");
             }
             else
             {
                 is_user_visits = true;
-                ptr += strlen("visits");
+                ptr += M_STRLEN("visits");
             }
         }
 
@@ -138,7 +126,7 @@ int handle_request(int socket_fd)
                 *ptr = 0;
                 ptr++;
 
-#define PARSE_GETS_1(prop, str_prop) { ptr += strlen(str_prop) + 1; prop = ptr; while (*ptr != '&' && *ptr != ' ') ptr++; }
+#define PARSE_GETS_1(prop, str_prop) { ptr += M_STRLEN(str_prop); (prop) = ptr; while (*ptr != '&' && *ptr != ' ') ptr++; }
 
                 if (ptr[0] == 'g')      PARSE_GETS_1(gender, "gender")
                 else if (ptr[0] == 'c') PARSE_GETS_1(country, "country")
@@ -193,31 +181,28 @@ int handle_request(int socket_fd)
         auto processor = PostEntityRouteProcessor(socket_fd);
         processor.process(entity_type, id_ptr, body_ptr);
     }
+exit:
 
     if (!is_get)
         close(socket_fd);
-    //logger::log(query_id);
+
     query_id++;
     return 0;
 }
 
 int main(int argc, const char *argv[])
 {
-    logger::log("Unpacking data...");
+    M_LOG("Unpacking data...");
     state.fill_from_file("/tmp/data/data.zip");
-    logger::log("Data unpacked");
-#ifdef DEBUG
-    const int port = 8080;
-#else
+    M_LOG("Data unpacked");
+
     const int port = 80;
-#endif
 
-    logger::log("Initializing server...");
+    M_LOG("Initializing server...");
     WebServer server(port, handle_request);
-    logger::log("Starting server...");
+    M_LOG("Starting server...");
     server.start();
-    logger::log("Server stopped...");
+    M_LOG("Server stopped...");
 
-    //thread_pool.join();
     return 0;
 }

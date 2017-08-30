@@ -3,7 +3,7 @@ project(highload)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(SOURCE_FILES main.cpp web-server.h model/user.cpp model/user.h model/location.cpp model/location.h model/visit.cpp model/visit.h state.cpp state.h routes/base.h routes/get_entity.h model/entity.cpp model/entity.h utility.cpp utility.h routes/get_user_visits.h routes/get_location_avg.h routes/post_entity.h logger.h json.h fast_hash_map.h)
+set(SOURCE_FILES main.cpp web-server.h model/user.cpp model/user.h model/location.cpp model/location.h model/visit.cpp model/visit.h state.cpp state.h routes/base.h routes/get_entity.h model/entity.cpp model/entity.h utility.h routes/get_user_visits.h routes/get_location_avg.h routes/post_entity.h logger.h json.h fast_hash_map.h)
 add_executable(highload ${SOURCE_FILES})
 
 find_package(Threads REQUIRED)
@@ -14,7 +14,7 @@ if(CMAKE_THREAD_LIBS_INIT)
     target_link_libraries(highload "${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
-
+message("asdasd")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -25,6 +25,6 @@ endif()
 
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 #set(CMAKE_CXX_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2") # #sudo apt-get install gcc-multilib -m32
 
 #set(CMAKE_C_FLAGS "-DDEBUG")

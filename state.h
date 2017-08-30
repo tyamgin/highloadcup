@@ -1,9 +1,9 @@
 #ifndef HIGHLOAD_DB_H
 #define HIGHLOAD_DB_H
 
-#define HASH_TABLE_USERS_MAX_SIZE (1 << 20)
-#define HASH_TABLE_LOCATIONS_MAX_SIZE (1 << 20)
-#define HASH_TABLE_VISITS_MAX_SIZE (1 << 22)
+#define M_USERS_MAX_ID 1'100'000 // actual size 1000074 + 40000
+#define M_LOCATIONS_MAX_ID 900'000 // actual size 761314 + 40000
+#define M_VISITS_MAX_ID 11'000'000 // actual size 10000740 + 40000
 
 #include <map>
 #include <string>
@@ -44,27 +44,27 @@ public:
 class State
 {
 public:
-    FastIntHashMap<User*, HASH_TABLE_USERS_MAX_SIZE> users;
-    FastIntHashMap<Location*, HASH_TABLE_LOCATIONS_MAX_SIZE> locations;
-    FastIntHashMap<Visit*, HASH_TABLE_VISITS_MAX_SIZE> visits;
-    FastIntHashMap<vector<Visit*>, HASH_TABLE_USERS_MAX_SIZE> user_visits;
-    FastIntHashMap<vector<Visit*>, HASH_TABLE_LOCATIONS_MAX_SIZE> location_visits;
+    User* users[M_USERS_MAX_ID];
+    Location* locations[M_LOCATIONS_MAX_ID];
+    Visit* visits[M_VISITS_MAX_ID];
+    vector<Visit*> user_visits[M_VISITS_MAX_ID];
+    vector<Visit*> location_visits[M_VISITS_MAX_ID];
 
     bool has_entity(EntityType type, int id)
     {
-        return type == UserEntity && users.contains(id)
-            || type == LocationEntity && locations.contains(id)
-            || type == VisitEntity && visits.contains(id);
+        return type == UserEntity && id < M_USERS_MAX_ID && users[id] != NULL
+            || type == LocationEntity && id < M_LOCATIONS_MAX_ID && locations[id] != NULL
+            || type == VisitEntity && id < M_VISITS_MAX_ID && visits[id] != NULL;
     }
 
     Entity* get_entity(EntityType type, int id, bool clone = false)
     {
         if (type == UserEntity)
-            return !users.contains(id) ? NULL : (clone ? new User(*users[id]) : users[id]);
+            return (id >= M_USERS_MAX_ID || users[id] == NULL) ? NULL : (clone ? new User(*users[id]) : users[id]);
         if (type == LocationEntity)
-            return !locations.contains(id) ? NULL : (clone ? new Location(*locations[id]) : locations[id]);
+            return (id >= M_LOCATIONS_MAX_ID || locations[id] == NULL) ? NULL : (clone ? new Location(*locations[id]) : locations[id]);
         if (type == VisitEntity)
-            return !visits.contains(id) ? NULL : (clone ? new Visit(*visits[id]) : visits[id]);
+            return (id >= M_VISITS_MAX_ID || visits[id] == NULL) ? NULL : (clone ? new Visit(*visits[id]) : visits[id]);
         return NULL;
     }
 
@@ -123,25 +123,25 @@ public:
         if (visit->id != old_visit->id)
             throw invalid_argument("visait_id mismatch " + to_string(visit->id) + " != " + to_string(old_visit->id));
 
-        auto &old_arr = this->user_visits[old_visit->user];
-        for (int i = 0; i < (int) old_arr.size(); i++)
+        auto &old_user_visits_arr = this->user_visits[old_visit->user];
+        for (int i = 0; i < (int) old_user_visits_arr.size(); i++)
         {
-            auto &user_visit = old_arr[i];
+            auto &user_visit = old_user_visits_arr[i];
             if (user_visit->id == old_visit->id)
             {
-                old_arr.erase(old_arr.begin() + i);
+                old_user_visits_arr.erase(old_user_visits_arr.begin() + i);
                 break;
             }
         }
         this->user_visits[visit->user].push_back(visit);
 
-        auto &old_arr2 = this->location_visits[old_visit->location];
-        for (int i = 0; i < (int) old_arr2.size(); i++)
+        auto &old_location_visits_arr = this->location_visits[old_visit->location];
+        for (int i = 0; i < (int) old_location_visits_arr.size(); i++)
         {
-            auto &location_visit = old_arr2[i];
+            auto &location_visit = old_location_visits_arr[i];
             if (location_visit->id == old_visit->id)
             {
-                old_arr2.erase(old_arr2.begin() + i);
+                old_location_visits_arr.erase(old_location_visits_arr.begin() + i);
                 break;
             }
         }
@@ -163,19 +163,19 @@ public:
 
     void fill_from_file(string path, string tmp_dir = "/tmp/data-unpacked")
     {
-        logger::log("Removing tmp dir...");
-        system(("rm -rf \"" + tmp_dir + "\"").c_str());
-        logger::log("Creating tmp dir...");
-        system(("mkdir \"" + tmp_dir + "\"").c_str());
-        logger::log("Unzipping...");
-        system(("unzip -o \"" + path + "\" -d \"" + tmp_dir + "\"").c_str());
+        M_LOG("Removing tmp dir...");
+        Utility::system("rm -rf \"" + tmp_dir + "\"");
+        M_LOG("Creating tmp dir...");
+        Utility::system("mkdir \"" + tmp_dir + "\"");
+        M_LOG("Unzipping...");
+        Utility::system("unzip -o \"" + path + "\" -d \"" + tmp_dir + "\"");
 
         DIR *dir;
         dirent *ent;
         if ((dir = opendir(tmp_dir.c_str())) == NULL)
             throw runtime_error("cannot opendir " + tmp_dir);
 
-        logger::log("Scanning directory...");
+        M_LOG("Scanning directory...");
 
         int entities_count[] = {0, 0, 0};
 
@@ -189,11 +189,10 @@ public:
                     fstream in(fpath.c_str(), fstream::in);
                     if (!in)
                         throw runtime_error("cannot ioen file (fstream) " + fpath);
-                    logger::log("Processing " + fpath);
+                    M_LOG("Processing " + fpath);
 
                     string str;
                     getline(in, str, '\0');
-                    logger::log("Data read successful");
                     in.close();
 
                     while(!str.empty() && str.back() != ']')
@@ -215,8 +214,8 @@ public:
                         json::Object json;
                         if (!json.parse_simple_object(str.c_str(), (int) str.size(), start_pos, start_pos))
                         {
-                            logger::error("JSON parse error");
-                            logger::log("..." + str.substr(start_pos, 250));
+                            M_ERROR("JSON parse error");
+                            M_LOG("..." + str.substr(start_pos, 250));
                             exit(1);
                         }
                         start_pos++;
@@ -240,9 +239,9 @@ public:
         }
         closedir(dir);
 
-        logger::log((string)"Total number of users: " + to_string(entities_count[UserEntity]));
-        logger::log((string)"Total number of locations: " + to_string(entities_count[LocationEntity]));
-        logger::log((string)"Total number of visits: " + to_string(entities_count[VisitEntity]));
+        M_LOG("Total number of users: " << entities_count[UserEntity]);
+        M_LOG("Total number of locations: " << entities_count[LocationEntity]);
+        M_LOG("Total number of visits: " << entities_count[VisitEntity]);
     }
 };
 

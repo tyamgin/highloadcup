@@ -12,7 +12,7 @@ using namespace std;
 class GetLocationAvgRouteProcessor : public RouteProcessor
 {
 public:
-    explicit GetLocationAvgRouteProcessor(int socket_fd) : RouteProcessor(socket_fd)
+    explicit GetLocationAvgRouteProcessor(int socket_fd) : RouteProcessor(socket_fd) 
     {
     }
 
@@ -32,7 +32,7 @@ public:
         }
         int location_id = atoi(str_id);
 
-        if (!state.locations.contains(location_id))
+        if (location_id >= M_LOCATIONS_MAX_ID || state.locations[location_id] == NULL)
         {
             handle_404();
             return;
@@ -81,9 +81,12 @@ public:
             count = 1;
         }
 
-        char buf[20];
-        sprintf(buf, "{\"avg\":%.5f}", 1.0 * sum / count + 1e-10);
-        handle_200(buf, strlen(buf));
+#define M_LOCATION_AVG_RESPONSE_PREFIX M_RESPONSE_200_PREFIX "15\n\n{\"avg\":"
+        const int offset = M_STRLEN(M_LOCATION_AVG_RESPONSE_PREFIX);
+        static thread_local char buf[offset + 20] = M_LOCATION_AVG_RESPONSE_PREFIX;
+
+        sprintf(buf + offset, "%.5f}", 1.0 * sum / count + 1e-10);
+        handle(buf, offset + 8);
     }
 
 private:

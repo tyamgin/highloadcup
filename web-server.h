@@ -28,15 +28,13 @@
 
 using namespace std;
 
-#ifndef EPOLLEXCLUSIVE
-#define EPOLLEXCLUSIVE (1 << 28)
-#endif
 
-#define M_FLAGS (EPOLLIN | EPOLLEXCLUSIVE | EPOLLET)
+#define M_FLAGS (EPOLLIN | EPOLLET)
 
-#define M_EPOLL_MAX_EVENTS 32
-#define M_THREADS_COUNT 4
-
+#define M_EPOLL_MAX_EVENTS 64
+#define M_LISTEN_MAX_CONN SOMAXCONN
+#define M_THREADS_COUNT 0
+   
 class WebServer
 {
     typedef int (*Handler)(int);
@@ -54,46 +52,38 @@ class WebServer
 
     void _worker_main()
     {
-        //pthread_detach(pthread_self());
-
-        int s;
         epoll_event event{};
-        epoll_event *events = (epoll_event *) calloc(M_EPOLL_MAX_EVENTS, sizeof event);
+        epoll_event events[M_EPOLL_MAX_EVENTS];
 
         // The event loop
         while (1)
         {
+            int n = epoll_wait(efd, events, M_EPOLL_MAX_EVENTS, 0);
 
-#ifdef DEBUG
-            //logger::log(to_string((long long) pthread_self()) + "| waiting");
-#endif
-            int n = epoll_wait(efd, events, M_EPOLL_MAX_EVENTS, -1);
-
-#ifdef DEBUG
-            logger::log(to_string((long long) pthread_self()) + "| wake ");
-#endif
+            if (n > 0)
+                M_DEBUG_LOG((long long) pthread_self() << "| wake ");
 
             if (n < 0)
             {
                 perror("epoll_wait");
                 //abort();
             }
-#ifdef DEBUG
-            //logger::log(to_string(n) + " in queue");
-#endif
+
+            if (n > 1)
+                M_DEBUG_LOG((long long) pthread_self() << "| " << n << " in queue");
+
             for (int i = 0; i < n; i++)
             {
                 auto socket_fd = events[i].data.fd;
-#ifdef DEBUG
-                logger::log(to_string((long long) pthread_self()) + "| sock in: " + to_string(socket_fd));
-#endif
+
+                M_DEBUG_LOG((long long) pthread_self() << "| sock in: " << socket_fd);
+
                 if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
                 {
                     // An error has occured on this fd, or the socket is not
                     // ready for reading (why were we notified then?)
-                    logger::error("epoll error");
+                    M_ERROR("epoll error");
                     close(events[i].data.fd);
-                    abort();
                 }
                 else if (sfd == socket_fd)
                 {
@@ -117,18 +107,14 @@ class WebServer
                             perror("accept");
                             break;
                         }
-#ifdef DEBUG
-                        logger::log(to_string((long long) pthread_self()) + "| accepted: " + to_string(infd));
-#endif
 
-                        // Make the incoming socket non-blocking and add it to the list of fds to monitor.
-                        _make_socket_non_blocking(infd);
+                        M_DEBUG_LOG((long long) pthread_self() << "| accepted: " << infd);
+
                         _make_socket_nodelay(infd);
 
                         event.data.fd = infd;
                         event.events = M_FLAGS;
-                        s = epoll_ctl(efd, EPOLL_CTL_ADD, infd, &event);
-                        if (s == -1)
+                        if (epoll_ctl(efd, EPOLL_CTL_ADD, infd, &event) == -1)
                         {
                             perror("epoll_ctl add");
                             abort();
@@ -142,7 +128,6 @@ class WebServer
                     // completely, as we are running in edge-triggered mode
                     // and won't get a notification again for the same
                     // data.
-
 
                     _handler(socket_fd);
                 }
@@ -168,7 +153,7 @@ class WebServer
         int s = getaddrinfo(NULL, port, &hints, &result);
         if (s != 0)
         {
-            logger::error((string)"getaddrinfo: " + gai_strerror(s));
+            M_ERROR("getaddrinfo: " << gai_strerror(s));
             abort();
         }
 
@@ -190,7 +175,7 @@ class WebServer
 
         if (rp == NULL)
         {
-            logger::log("Could not bind");
+            perror("Could not bind");
             abort();
         }
 
@@ -202,19 +187,41 @@ class WebServer
     static int _make_socket_nodelay(int sfd)
     {
         int flags = 1;
-        int s = setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, (char*) &flags, sizeof(int));
-        if (s < 0)
+        if (setsockopt(sfd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof(int)) < 0)
         {
-            perror("setsockopt");
+            perror("setsockopt TCP_NODELAY");
             abort();
         }
+        if (setsockopt(sfd, IPPROTO_TCP, TCP_QUICKACK, &flags, sizeof(int)) < 0)
+        {
+            perror("setsockopt TCP_QUICKACK");
+            abort();
+        }
+//        int prior = 6;
+//        if (setsockopt(sfd, SOL_SOCKET, SO_PRIORITY, &prior, sizeof(int)) < 0)
+//        {
+//            perror("setsockopt SO_PRIORITY");
+//            abort();
+//        }
+
+//        int bfsz = 128;
+//        if (setsockopt(sfd, SOL_SOCKET, SO_RCVBUF, &bfsz, sizeof(int)) < 0)
+//        {
+//            perror("setsockopt SO_RCVBUF");
+//            abort();
+//        }
+
+
+//        if (setsockopt(sfd, SOL_SOCKET, SO_DONTROUTE, (char*) &flags, sizeof(int)) < 0)
+//        {
+//            perror("setsockopt SO_DONTROUTE");
+//            abort();
+//        }
     }
 
     static void _make_socket_non_blocking(int sfd)
     {
-        int flags, s;
-
-        flags = fcntl(sfd, F_GETFL, 0);
+        int flags = fcntl(sfd, F_GETFL, 0);
         if (flags == -1)
         {
             perror("fcntl F_GETFL");
@@ -222,8 +229,7 @@ class WebServer
         }
 
         flags |= O_NONBLOCK;
-        s = fcntl(sfd, F_SETFL, flags);
-        if (s == -1)
+        if (fcntl(sfd, F_SETFL, flags) == -1)
         {
             perror("fcntl F_SETFL");
             abort();
@@ -239,26 +245,17 @@ public:
 
     int start()
     {
-        int s;
-
         sfd = _create_and_bind();
-        if (sfd == -1)
-        {
-            logger::error("sfd == -1");
-            abort();
-        }
 
         _make_socket_non_blocking(sfd);
         _make_socket_nodelay(sfd);
 
-        s = listen(sfd, SOMAXCONN);
-        if (s == -1)
+        if (listen(sfd, M_LISTEN_MAX_CONN) == -1)
         {
             perror("listen");
             abort();
         }
 
-        //efd = epoll_create(M_EPOLL_MAX_EVENTS);
         efd = epoll_create1(0);
 
         if (efd == -1)
@@ -267,18 +264,15 @@ public:
             abort();
         }
 
-
         epoll_event event{};
         event.data.fd = sfd;
         event.events = M_FLAGS;
-        s = epoll_ctl(efd, EPOLL_CTL_ADD, sfd, &event);
-        if (s == -1)
+
+        if (epoll_ctl(efd, EPOLL_CTL_ADD, sfd, &event) == -1)
         {
             perror("epoll_ctl");
             abort();
         }
-
-        // Buffer where events are returned
 
 #if M_THREADS_COUNT
         pthread_t threads[M_THREADS_COUNT];
@@ -291,7 +285,7 @@ public:
 #else
         _worker_main(this);
 #endif
-        //close(sfd);
+        close(sfd);
     }
 };
 

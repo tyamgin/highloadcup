@@ -285,33 +285,6 @@ state.cpp.s:
 	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/state.cpp.s
 .PHONY : state.cpp.s
 
-utility.o: utility.cpp.o
-
-.PHONY : utility.o
-
-# target to build an object file
-utility.cpp.o:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/utility.cpp.o
-.PHONY : utility.cpp.o
-
-utility.i: utility.cpp.i
-
-.PHONY : utility.i
-
-# target to preprocess a source file
-utility.cpp.i:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/utility.cpp.i
-.PHONY : utility.cpp.i
-
-utility.s: utility.cpp.s
-
-.PHONY : utility.s
-
-# target to generate assembly for a file
-utility.cpp.s:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/utility.cpp.s
-.PHONY : utility.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -339,9 +312,6 @@ help:
 	@echo "... state.o"
 	@echo "... state.i"
 	@echo "... state.s"
-	@echo "... utility.o"
-	@echo "... utility.i"
-	@echo "... utility.s"
 .PHONY : help
 
 

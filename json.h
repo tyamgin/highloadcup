@@ -1,51 +1,19 @@
 #ifndef HIGHLOAD_JSON_H
 #define HIGHLOAD_JSON_H
 
-#define JSON_USE_EXCEPTIONS false
-
 #include <iostream>
 #include <string>
 #include <vector>
 #include <exception>
 #include <stdexcept>
-#include <string.h>
 #include <map>
-#include <assert.h>
+#include <cstring>
+#include <cassert>
 
 using namespace std;
 
 namespace json
 {
-#if JSON_USE_EXCEPTIONS
-    class json_parse_error : public runtime_error
-    {
-        string _msg;
-        int _pos;
-
-    public:
-        json_parse_error(const string &msg, int pos) : runtime_error("JSON parse error"), _msg(msg), _pos(pos)
-        {
-        }
-
-        int get_pos() const
-        {
-            return _pos;
-        }
-
-        const char* what() const throw() override
-        {
-            string txt = (string)runtime_error::what() + ": " + _msg + " at position " + to_string(_pos);
-            auto _what_cache = new char[txt.size() + 1];
-            strcpy(_what_cache, txt.c_str());
-
-            return (const char*)_what_cache; // TODO: memory leak
-        }
-    };
-#else
-
-#endif
-
-
     class Object;
     class Value;
 
@@ -123,23 +91,7 @@ namespace json
 
     class Object
     {
-#if JSON_USE_EXCEPTIONS
-        void _expect(const char *str, int pos, char expected)
-        {
-            if (str[pos] != expected)
-            {
-                string en;
-                if (str[pos] != 0)
-                    en += str[pos];
-                else
-                    en += "\\0";
-                throw json_parse_error((string)"expected '" + expected + "', but found '" + en + "'", pos);
-            }
-        }
-#else
 #define _expect(str, pos, expected) if (str[pos] != (expected)) goto fail;
-#endif
-
 
         bool _parse_simple_object(const char *str, int n, int &end_pos)
         {

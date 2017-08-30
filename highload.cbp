@@ -143,9 +143,6 @@
 		<Unit filename="/home/tyamgin/CLionProjects/highload/state.h">
 			<Option target="highload"/>
 		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/utility.cpp">
-			<Option target="highload"/>
-		</Unit>
 		<Unit filename="/home/tyamgin/CLionProjects/highload/utility.h">
 			<Option target="highload"/>
 		</Unit>

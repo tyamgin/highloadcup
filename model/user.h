@@ -45,7 +45,7 @@ public:
         static thread_local char buf[512] = {};
         sprintf(buf, "{\"id\":%d,\"email\":\"%s\",\"first_name\":\"%s\",\"last_name\":\"%s\",\"gender\":\"%c\",\"birth_date\":%d}",
                 id, email, first_name, last_name, gender == Male ? 'm' : 'f', birth_date);
-        TRY_PARSE_COPY_JSON(json, buf)
+        TRY_PARSE_COPY_JSON(response_cache, buf)
         
         return true;
     }
