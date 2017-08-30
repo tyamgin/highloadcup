@@ -25,13 +25,13 @@ public:
             return;
         }
 
-        if (strcmp(str_id, "new") != 0 && !Utility::is_int(str_id))
+        int entity_id = 0;
+        if (strcmp(str_id, "new") != 0 && !Utility::tryParseInt(str_id, entity_id))
         {
             handle_404();
             return;
         }
 
-        int entity_id = str_id[0] == 'n' ? 0 : atoi(str_id);
         shared_ptr<Entity> entity;
 
         if (str_id[0] == 'n')

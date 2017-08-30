@@ -1,7 +1,7 @@
 #ifndef HIGHLOAD_LOGGER_H
 #define HIGHLOAD_LOGGER_H
 
-#define M_LOG(expr) (std::cout << expr << std::endl)
+#define M_LOG(expr) (std::cout << time(NULL) << "@ " << expr << std::endl)
 #define M_ERROR(expr) M_LOG(expr)
 
 #ifdef DEBUG

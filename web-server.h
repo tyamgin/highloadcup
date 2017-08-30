@@ -25,6 +25,7 @@
 #include <queue>
 
 #include "logger.h"
+#include "state.h"
 
 using namespace std;
 
@@ -44,13 +45,13 @@ class WebServer
     int sfd, efd;
 
 
-    static void* _worker_main(void *context)
+    static void* _thread_main(void *context)
     {
-        ((WebServer*) context)->_worker_main();
+        ((WebServer*) context)->_thread_main();
         return NULL;
     }
 
-    void _worker_main()
+    void _thread_main()
     {
         epoll_event event{};
         epoll_event events[M_EPOLL_MAX_EVENTS];
@@ -78,11 +79,18 @@ class WebServer
 
                 M_DEBUG_LOG((long long) pthread_self() << "| sock in: " << socket_fd);
 
-                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (!(events[i].events & EPOLLIN)))
+
+                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (events[i].events & EPOLLRDHUP) || (!(events[i].events & EPOLLIN)))
                 {
                     // An error has occured on this fd, or the socket is not
                     // ready for reading (why were we notified then?)
-                    M_ERROR("epoll error");
+                    M_ERROR("epoll error: " << events[i].events);
+                    M_LOG("Query idx: " << state.query_id);
+//                    M_LOG("Trying to read");
+//                    char buf[10];
+//                    int rr = read(events[i].data.fd, buf, sizeof(buf));
+//                    M_LOG("read=" << rr);
+//                    perror("read perror");
                     close(events[i].data.fd);
                 }
                 else if (sfd == socket_fd)
@@ -278,12 +286,12 @@ public:
         pthread_t threads[M_THREADS_COUNT];
 
         for (int i = 0; i < M_THREADS_COUNT; i++)
-            pthread_create(&threads[i], NULL, _worker_main, this);
+            pthread_create(&threads[i], NULL, _thread_main, this);
 
         for (int i = 0; i < M_THREADS_COUNT; i++)
             pthread_join(threads[i], NULL);
 #else
-        _worker_main(this);
+        _thread_main(this);
 #endif
         close(sfd);
     }

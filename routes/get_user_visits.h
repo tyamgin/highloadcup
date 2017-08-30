@@ -30,12 +30,12 @@ public:
                  const char* country,
                  const char* str_to_distance)
     {
-        if (!Utility::is_int(str_user_id))
+        int user_id;
+        if (!Utility::tryParseInt(str_user_id, user_id))
         {
             handle_404();
             return;
         }
-        int user_id = atoi(str_user_id);
 
         if (user_id >= M_USERS_MAX_ID || state.users[user_id] == NULL)
         {
@@ -43,22 +43,22 @@ public:
             return;
         }
 
-        if (str_from_date && !Utility::is_int(str_from_date)
-            || str_to_date && !Utility::is_int(str_to_date)
-            || str_to_distance && !Utility::is_int(str_to_distance))
+        int from_date = INT_MIN, to_date = INT_MAX, to_distance = INT_MAX;
+
+        if (str_from_date && !Utility::tryParseInt(str_from_date, from_date)
+            || str_to_date && !Utility::tryParseInt(str_to_date, to_date)
+            || str_to_distance && !Utility::tryParseInt(str_to_distance, to_distance))
         {
             handle_400();
             return;
         }
 
-        int from_date = str_from_date == NULL ? INT_MIN : atoi(str_from_date) + 1;
-        int to_date = str_to_date == NULL ? INT_MAX : atoi(str_to_date) - 1;
-        int to_distance = str_to_distance == NULL ? INT_MAX : atoi(str_to_distance) - 1;
+        if (from_date != INT_MAX) from_date++;
+        if (to_date != INT_MIN) to_date--;
+        if (to_distance != INT_MIN) to_distance--;
+        // TODO: wrong for visited_at=INT_MIN  and no str_from_date=NULL
 
         auto &user = state.users[user_id];
-        if (user == NULL)
-            throw runtime_error("user is NULL");
-
         vector<UserVisitItem> visits;
 
         auto country_hash = country ? Utility::stringUrlDecodedHash(country) : 0;
@@ -117,6 +117,12 @@ public:
         }
         *ptr++ = ']';
         *ptr++ = '}';
+
+        if (ptr - buf >= M_RESPONSE_MAX_SIZE)
+        {
+            M_ERROR("response limit exceeded");
+            abort();
+        }
 
         handle_200(buf, ptr - buf);
     }

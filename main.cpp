@@ -1,3 +1,9 @@
+/**
+ * TODO:
+ * - extra spaces in headers
+ * - do not parse json if 404 or 400 (?)
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,7 +18,6 @@
 
 using namespace std;
 
-#define INT_MAX_LENGTH 11
 #define M_BUFFER_MAX_SIZE (1 << 13)
 
 ssize_t read_buf(int sfd, char* buf, size_t size)
@@ -43,8 +48,6 @@ int handle_request(int socket_fd)
     ssize_t n;
     static thread_local char buffer[M_BUFFER_MAX_SIZE];
 
-    static int query_id = 1;
-
     n = read_buf(socket_fd, buffer, M_BUFFER_MAX_SIZE);
     if (n <= 0)
     {
@@ -54,7 +57,7 @@ int handle_request(int socket_fd)
 
     buffer[n] = 0;
 
-    M_DEBUG_LOG((long long) pthread_self() << "| Processing " << query_id << " query, sock=" << socket_fd);
+    M_DEBUG_LOG((long long) pthread_self() << "| Processing " << state.query_id << " query, sock=" << socket_fd);
 
     bool is_get = buffer[0] == 'G';
 
@@ -126,7 +129,7 @@ int handle_request(int socket_fd)
                 *ptr = 0;
                 ptr++;
 
-#define PARSE_GETS_1(prop, str_prop) { ptr += M_STRLEN(str_prop); (prop) = ptr; while (*ptr != '&' && *ptr != ' ') ptr++; }
+#define PARSE_GETS_1(prop, str_prop) { ptr += M_STRLEN(str_prop) + 1; (prop) = ptr; while (*ptr != '&' && *ptr != ' ') ptr++; }
 
                 if (ptr[0] == 'g')      PARSE_GETS_1(gender, "gender")
                 else if (ptr[0] == 'c') PARSE_GETS_1(country, "country")
@@ -186,14 +189,14 @@ exit:
     if (!is_get)
         close(socket_fd);
 
-    query_id++;
+    state.query_id++;
     return 0;
 }
 
 int main(int argc, const char *argv[])
 {
     M_LOG("Unpacking data...");
-    state.fill_from_file("/tmp/data/data.zip");
+    state.fill_from_file("/tmp/data");
     M_LOG("Data unpacked");
 
     const int port = 80;

@@ -1,156 +1,154 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_project_file>
-	<FileVersion major="1" minor="6"/>
-	<Project>
-		<Option title="highload"/>
-		<Option makefile_is_custom="1"/>
-		<Option compiler="gcc"/>
-		<Option virtualFolders="CMake Files\;"/>
-		<Build>
-			<Target title="all">
-				<Option working_dir="/home/tyamgin/CLionProjects/highload"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="rebuild_cache">
-				<Option working_dir="/home/tyamgin/CLionProjects/highload"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="edit_cache">
-				<Option working_dir="/home/tyamgin/CLionProjects/highload"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="highload">
-				<Option output="/home/tyamgin/CLionProjects/highload/highload" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/tyamgin/CLionProjects/highload"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="gcc"/>
-				<Compiler>
-					<Add option="-DDEBUG"/>
-					<Add directory="/usr/include/c++/5"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
-					<Add directory="/usr/include/c++/5/backward"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
-					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
-					<Add directory="/usr/include/x86_64-linux-gnu"/>
-					<Add directory="/usr/include"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 highload"/>
-					<CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-			<Target title="highload/fast">
-				<Option output="/home/tyamgin/CLionProjects/highload/highload" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/tyamgin/CLionProjects/highload"/>
-				<Option object_output="./"/>
-				<Option type="1"/>
-				<Option compiler="gcc"/>
-				<Compiler>
-					<Add option="-DDEBUG"/>
-					<Add directory="/usr/include/c++/5"/>
-					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
-					<Add directory="/usr/include/c++/5/backward"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
-					<Add directory="/usr/local/include"/>
-					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
-					<Add directory="/usr/include/x86_64-linux-gnu"/>
-					<Add directory="/usr/include"/>
-				</Compiler>
-				<MakeCommands>
-					<Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 highload/fast"/>
-					<CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
-		</Build>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/fast_hash_map.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/json.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/logger.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/main.cpp">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/entity.cpp">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/entity.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/location.cpp">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/location.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/user.cpp">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/user.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/visit.cpp">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/model/visit.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/routes/base.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/routes/get_entity.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/routes/get_location_avg.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/routes/get_user_visits.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/routes/post_entity.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/state.cpp">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/state.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/utility.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/web-server.h">
-			<Option target="highload"/>
-		</Unit>
-		<Unit filename="/home/tyamgin/CLionProjects/highload/CMakeLists.txt">
-			<Option virtualFolder="CMake Files\"/>
-		</Unit>
-	</Project>
+   <FileVersion major="1" minor="6" />
+   <Project>
+      <Option title="highload" />
+      <Option makefile_is_custom="1" />
+      <Option compiler="gcc" />
+      <Option virtualFolders="CMake Files\;" />
+      <Build>
+      <Target title="all">
+         <Option working_dir="/home/tyamgin/CLionProjects/highload" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 all" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="edit_cache">
+         <Option working_dir="/home/tyamgin/CLionProjects/highload" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 edit_cache" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="highload">
+         <Option output="/home/tyamgin/CLionProjects/highload/highload" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/tyamgin/CLionProjects/highload" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/usr/include" />
+            <Add directory="/usr/include/c++/5" />
+            <Add directory="/usr/include/c++/5/backward" />
+            <Add directory="/usr/include/x86_64-linux-gnu" />
+            <Add directory="/usr/include/x86_64-linux-gnu/c++/5" />
+            <Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include" />
+            <Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 highload" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="highload/fast">
+         <Option output="/home/tyamgin/CLionProjects/highload/highload" prefix_auto="0" extension_auto="0" />
+         <Option working_dir="/home/tyamgin/CLionProjects/highload" />
+         <Option object_output="./" />
+         <Option type="1" />
+         <Option compiler="gcc" />
+         <Compiler>
+            <Add directory="/usr/include" />
+            <Add directory="/usr/include/c++/5" />
+            <Add directory="/usr/include/c++/5/backward" />
+            <Add directory="/usr/include/x86_64-linux-gnu" />
+            <Add directory="/usr/include/x86_64-linux-gnu/c++/5" />
+            <Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include" />
+            <Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed" />
+            <Add directory="/usr/local/include" />
+         </Compiler>
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 highload/fast" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      <Target title="rebuild_cache">
+         <Option working_dir="/home/tyamgin/CLionProjects/highload" />
+         <Option type="4" />
+         <MakeCommands>
+            <Build command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 rebuild_cache" />
+            <CompileFile command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 &quot;$file&quot;" />
+            <Clean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+            <DistClean command="/usr/bin/make -f &quot;/home/tyamgin/CLionProjects/highload/Makefile&quot;  VERBOSE=1 clean" />
+         </MakeCommands>
+      </Target>
+      </Build>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/fast_hash_map.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/json.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/logger.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/main.cpp">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/entity.cpp">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/entity.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/location.cpp">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/location.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/user.cpp">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/user.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/visit.cpp">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/model/visit.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/routes/base.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/routes/get_entity.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/routes/get_location_avg.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/routes/get_user_visits.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/routes/post_entity.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/state.cpp">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/state.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/utility.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/web-server.h">
+         <Option target="highload"/>
+      </Unit>
+      <Unit filename="/home/tyamgin/CLionProjects/highload/CMakeLists.txt">
+          <Option virtualFolder="CMake Files\" />
+      </Unit>
+   </Project>
 </CodeBlocks_project_file>

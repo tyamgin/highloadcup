@@ -14,7 +14,6 @@ if(CMAKE_THREAD_LIBS_INIT)
     target_link_libraries(highload "${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
-message("asdasd")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()

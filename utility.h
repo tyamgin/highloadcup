@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#define INT_MAX_LENGTH 11
+
 #define M_STRLEN(str) (sizeof(str) - 1)
 #define M_MEMCPY(dest, src) memcpy((dest), (src), sizeof((src)))
 
@@ -19,7 +21,32 @@ typedef unsigned long long HashType;
 class Utility
 {
 public:
-    static bool is_int(const char* str)
+    static bool tryParseInt(const char* str, int &result)
+    {
+        if (str[0] == 0)
+            return false;
+
+        if (str[0] != '-' && isdigit(str[0]) == 0)
+            return false;
+
+        for(int i = 1; str[i] != 0; i++)
+        {
+            if (isdigit(str[i]) == 0)
+                return false;
+            if (i > INT_MAX_LENGTH)
+                return false;
+        }
+
+        auto ll_val = atoll(str);
+        if (ll_val < INT_MIN || ll_val > INT_MAX)
+            return false;
+
+        result = (int) ll_val;
+        return true;
+    }
+
+
+    static bool is_int1(const char* str)
     {
         if (str[0] == 0)
             return false;

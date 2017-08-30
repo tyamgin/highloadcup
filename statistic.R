@@ -1,6 +1,6 @@
 require(ggplot2)
 
-path = '/home/tyamgin/CLionProjects/hlcupdocs-master/logs/2017-08-26_11-36-15.ULYuxR/phout_gotUm6.log'
+path = '/home/tyamgin/CLionProjects/hlcupdocs-master/logs/2017-08-27_11-17-20.Z8QmoA/phout_KcBHI2.log'
 
 conn = file(path, open="r")
 linn = readLines(conn)
@@ -35,6 +35,7 @@ X = data.frame(
 
 cat('Summary:\n')
 cat(paste0('sum ', sum(X$sum), ' sec'))
+cat('\n')
 
 sum_aggr = aggregate(X$sum, list(X$timestamp), sum)
 sum_aggr$color = 1
@@ -46,3 +47,5 @@ data = rbind(sum_aggr, latency_aggr)
 print(
   ggplot(NULL,  aes(x=data[, 1], y=data[, 2], group=data[,3], color=data[,3])) + geom_point() + geom_line()
 )
+
+print(X[which(X$sum > 0.5), ])

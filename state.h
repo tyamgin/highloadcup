@@ -163,12 +163,28 @@ public:
 
     void fill_from_file(string path, string tmp_dir = "/tmp/data-unpacked")
     {
+        fstream in(path + "/options.txt", fstream::in);
+        if (in)
+        {
+            in >> cur_timestamp;
+            M_LOG("Read timestamp from options.txt: " << cur_timestamp);
+        }
+        else
+        {
+            cur_timestamp = time(NULL);
+            M_LOG("optionx.txt not found, use time(NULL): " << cur_timestamp);
+        }
+
+        cur_time = localtime(&cur_timestamp);
+
+        path += "/data.zip";
+
         M_LOG("Removing tmp dir...");
         Utility::system("rm -rf \"" + tmp_dir + "\"");
         M_LOG("Creating tmp dir...");
         Utility::system("mkdir \"" + tmp_dir + "\"");
         M_LOG("Unzipping...");
-        Utility::system("unzip -o \"" + path + "\" -d \"" + tmp_dir + "\"");
+        Utility::system("unzip -o \"" + path + "\" -d \"" + tmp_dir + "\" > /dev/null");
 
         DIR *dir;
         dirent *ent;
@@ -186,10 +202,10 @@ public:
                 if (strncmp(entity_name.c_str(), ent->d_name, entity_name.size()) == 0)
                 {
                     string fpath = tmp_dir + "/" + ent->d_name;
-                    fstream in(fpath.c_str(), fstream::in);
+                    fstream in(fpath, fstream::in);
                     if (!in)
-                        throw runtime_error("cannot ioen file (fstream) " + fpath);
-                    M_LOG("Processing " + fpath);
+                        throw runtime_error("cannot open file (fstream) " + fpath);
+                    M_DEBUG_LOG("Processing " + fpath);
 
                     string str;
                     getline(in, str, '\0');
@@ -201,8 +217,6 @@ public:
                         str.pop_back();
                     while(!str.empty() && isspace(str.back()))
                         str.pop_back();
-
-                    auto tmp = str.c_str();
 
                     int start_pos = 0;
                     while (start_pos < str.size() && str[start_pos] != '[')
@@ -239,10 +253,34 @@ public:
         }
         closedir(dir);
 
+        M_LOG("Removing tmp dir...");
+        Utility::system("rm -rf \"" + tmp_dir + "\"");
+
         M_LOG("Total number of users: " << entities_count[UserEntity]);
         M_LOG("Total number of locations: " << entities_count[LocationEntity]);
         M_LOG("Total number of visits: " << entities_count[VisitEntity]);
+
+        M_LOG("Visits per user: " << 1.0 * entities_count[VisitEntity] / entities_count[UserEntity]);
+        M_LOG("Visits per location: " << 1.0 * entities_count[VisitEntity] / entities_count[LocationEntity]);
+
+        int u_max = 0;
+        for (int i = 0; i < M_USERS_MAX_ID; i++)
+            if (users[i] != NULL)
+                u_max = max(u_max, (int) user_visits[i].size());
+
+        int l_max = 0;
+        for (int i = 0; i < M_LOCATIONS_MAX_ID; i++)
+            if (locations[i] != NULL)
+                l_max = max(l_max, (int) location_visits[i].size());
+
+        M_LOG("Max user visits: " << u_max);
+        M_LOG("Max location visits: " << l_max);
     }
+
+    time_t cur_timestamp;
+    tm* cur_time;
+
+    int query_id = 1;
 };
 
 extern State state;

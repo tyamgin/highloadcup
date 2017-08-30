@@ -12,7 +12,7 @@ using namespace std;
 class GetLocationAvgRouteProcessor : public RouteProcessor
 {
 public:
-    explicit GetLocationAvgRouteProcessor(int socket_fd) : RouteProcessor(socket_fd) 
+    explicit GetLocationAvgRouteProcessor(int socket_fd) : RouteProcessor(socket_fd)
     {
     }
 
@@ -25,12 +25,12 @@ public:
             const char* str_gender
     )
     {
-        if (!Utility::is_int(str_id))
+        int location_id;
+        if (!Utility::tryParseInt(str_id, location_id))
         {
             handle_404();
             return;
         }
-        int location_id = atoi(str_id);
 
         if (location_id >= M_LOCATIONS_MAX_ID || state.locations[location_id] == NULL)
         {
@@ -38,10 +38,14 @@ public:
             return;
         }
 
-        if (str_from_date && !Utility::is_int(str_from_date)
-            || str_to_date && !Utility::is_int(str_to_date)
-            || str_from_age && !Utility::is_int(str_from_age)
-            || str_to_age && !Utility::is_int(str_to_age)
+        int from_date = INT_MIN;
+        int to_date = INT_MAX;
+        int from_age, to_age;
+
+        if (str_from_date && !Utility::tryParseInt(str_from_date, from_date)
+            || str_to_date && !Utility::tryParseInt(str_to_date, to_date)
+            || str_from_age && !Utility::tryParseInt(str_from_age, from_age)
+            || str_to_age && !Utility::tryParseInt(str_to_age, to_age)
             || str_gender && (str_gender[0] != 'm' || str_gender[1] != 0) && (str_gender[0] != 'f' || str_gender[1] != 0)
                 )
         {
@@ -49,13 +53,11 @@ public:
             return;
         }
 
-        auto timestamp = time(NULL);
-        int from_date = str_from_date == NULL ? INT_MIN : atoi(str_from_date) + 1;
-        int to_date = str_to_date == NULL ? INT_MAX : atoi(str_to_date) - 1;
+        if (from_date != INT_MAX) from_date++;
+        if (to_date != INT_MIN) to_date--;
 
-        tm* cur_time = localtime(&timestamp);
-        long long from_birth = str_to_age == NULL ? LONG_LONG_MIN : _time_minus_years(*cur_time, atoi(str_to_age)) + 1;
-        long long to_birth = str_from_age == NULL ? LONG_LONG_MAX : _time_minus_years(*cur_time, atoi(str_from_age)) - 1;
+        int from_birth = str_to_age == NULL ? INT_MIN : (int) min((long long)INT_MAX, (long long)_time_minus_years(*state.cur_time, to_age) + 1);
+        int to_birth = str_from_age == NULL ? INT_MAX : (int) max((long long)INT_MIN, (long long)_time_minus_years(*state.cur_time, from_age) - 1);
 
         int sum = 0;
         int count = 0;

@@ -17,20 +17,20 @@ public:
 
     void process(EntityType entity_type, const char *str_id)
     {
-        if (!Utility::is_int(str_id))
-        {
-            handle_404();
-            return;
-        }
-        int id = atoi(str_id);
-
-        if (!state.has_entity(entity_type, id))
+        int entity_id;
+        if (!Utility::tryParseInt(str_id, entity_id))
         {
             handle_404();
             return;
         }
 
-        char *response = state.get_entity(entity_type, id)->response_cache;
+        if (!state.has_entity(entity_type, entity_id))
+        {
+            handle_404();
+            return;
+        }
+
+        char *response = state.get_entity(entity_type, entity_id)->response_cache;
         handle(response, strlen(response));
     }
 };

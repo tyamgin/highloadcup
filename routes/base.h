@@ -21,9 +21,9 @@
 
 using namespace std;
 
-#define M_RESPONSE_404 "HTTP/1.1 404 Not Found\nContent-Type: application/json; charset=utf-8\nContent-Length: 2\n\n{}"
-#define M_RESPONSE_400 "HTTP/1.1 400 Bad Request\nContent-Type: application/json; charset=utf-8\nContent-Length: 2\n\n{}"
-#define M_RESPONSE_200_PREFIX "HTTP/1.1 200 OK\nContent-Type: application/json; charset=utf-8\nContent-Length: "
+#define M_RESPONSE_404 "HTTP/1.1 404 Not Found\nContent-Type: application/json\nContent-Length: 2\n\n{}"
+#define M_RESPONSE_400 "HTTP/1.1 400 Bad Request\nContent-Type: application/json\nContent-Length: 2\n\n{}"
+#define M_RESPONSE_200_PREFIX "HTTP/1.1 200 OK\nContent-Type: application/json\nContent-Length: "
 
 #define M_RESPONSE_MAX_SIZE 100000
 
