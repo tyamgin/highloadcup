@@ -1,7 +1,6 @@
 /**
  * TODO:
- * - extra spaces in headers
- * - do not parse json if 404 or 400 (?)
+ * -
  */
 
 #include <stdio.h>
@@ -18,7 +17,7 @@
 
 using namespace std;
 
-#define M_BUFFER_MAX_SIZE (1 << 13)
+#define M_BUFFER_MAX_SIZE (1 << 14)
 
 ssize_t read_buf(int sfd, char* buf, size_t size)
 {
@@ -29,7 +28,7 @@ ssize_t read_buf(int sfd, char* buf, size_t size)
         if (errno != EAGAIN)
         {
             perror("read");
-            abort();
+            //abort();
         }
         return -1;
     }
@@ -51,7 +50,15 @@ int handle_request(int socket_fd)
     n = read_buf(socket_fd, buffer, M_BUFFER_MAX_SIZE);
     if (n <= 0)
     {
-        M_DEBUG_LOG((long long) pthread_self() << "| miss sock=" << socket_fd);
+        if (n == 0)
+        {
+            M_DEBUG_LOG((long long) pthread_self() << "| close sock=" << socket_fd);
+            close(socket_fd);
+        }
+        else
+        {
+            M_LOG((long long) pthread_self() << "| miss sock=" << socket_fd);
+        }
         return -1;
     }
 
@@ -187,7 +194,10 @@ int handle_request(int socket_fd)
 exit:
 
     if (!is_get)
+    {
+        //shutdown(socket_fd, SHUT_RDWR);
         close(socket_fd);
+    }
 
     state.query_id++;
     return 0;

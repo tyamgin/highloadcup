@@ -32,7 +32,7 @@ namespace json
         void _copy_value(const char* src, int begin, int end)
         {
             int length = end - begin;
-            _val = new char[length + 1];
+            _val = (char*) malloc(length + 1);
             memcpy(_val, src + begin, length);
             _val[length] = 0;
         }
@@ -114,7 +114,7 @@ namespace json
                 int key_start_pos = pos;
                 while (pos < n && str[pos] != '"')
                     pos++;
-                key = new char[pos - key_start_pos + 1];
+                key = (char*) malloc(pos - key_start_pos + 1);
                 memcpy(key, str + key_start_pos, pos - key_start_pos);
                 key[pos - key_start_pos] = 0;
 

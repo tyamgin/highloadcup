@@ -51,7 +51,7 @@ public:
 
     void handle_404()
     {
-        if (send(socket_fd, M_RESPONSE_404, M_STRLEN(M_RESPONSE_404), 0) < 0)
+        if (send(socket_fd, M_RESPONSE_404, M_STRLEN(M_RESPONSE_404), 0) <= 0)
         {
             perror("404 write()");
             abort();
@@ -60,7 +60,7 @@ public:
 
     void handle_400()
     {
-        if (send(socket_fd, M_RESPONSE_400, M_STRLEN(M_RESPONSE_400), 0) < 0)
+        if (send(socket_fd, M_RESPONSE_400, M_STRLEN(M_RESPONSE_400), 0) <= 0)
         {
             perror("400 write()");
             abort();
@@ -69,7 +69,7 @@ public:
 
     void handle_200()
     {
-        if (send(socket_fd, M_RESPONSE_200_PREFIX "2\n\n{}", M_STRLEN(M_RESPONSE_400 "2\n\n{}"), 0) < 0)
+        if (send(socket_fd, M_RESPONSE_200_PREFIX "2\n\n{}", M_STRLEN(M_RESPONSE_400 "2\n\n{}"), 0) <= 0)
         {
             perror("200 write()");
             abort();
@@ -91,7 +91,7 @@ public:
 
         memcpy(headers + prefix_length + additional_buf_length, body, content_length);
 
-        if (send(socket_fd, headers, prefix_length + additional_buf_length + content_length, 0) < 0)
+        if (send(socket_fd, headers, prefix_length + additional_buf_length + content_length, 0) <= 0)
         {
             perror("200 all write()");
             abort();
@@ -100,7 +100,7 @@ public:
 
     void handle(const char* all, size_t length)
     {
-        if (send(socket_fd, all, length, 0) < 0)
+        if (send(socket_fd, all, length, 0) <= 0)
         {
             perror("handle write()");
             abort();

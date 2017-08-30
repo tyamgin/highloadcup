@@ -150,114 +150,6 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-model/entity.o: model/entity.cpp.o
-
-.PHONY : model/entity.o
-
-# target to build an object file
-model/entity.cpp.o:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/entity.cpp.o
-.PHONY : model/entity.cpp.o
-
-model/entity.i: model/entity.cpp.i
-
-.PHONY : model/entity.i
-
-# target to preprocess a source file
-model/entity.cpp.i:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/entity.cpp.i
-.PHONY : model/entity.cpp.i
-
-model/entity.s: model/entity.cpp.s
-
-.PHONY : model/entity.s
-
-# target to generate assembly for a file
-model/entity.cpp.s:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/entity.cpp.s
-.PHONY : model/entity.cpp.s
-
-model/location.o: model/location.cpp.o
-
-.PHONY : model/location.o
-
-# target to build an object file
-model/location.cpp.o:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/location.cpp.o
-.PHONY : model/location.cpp.o
-
-model/location.i: model/location.cpp.i
-
-.PHONY : model/location.i
-
-# target to preprocess a source file
-model/location.cpp.i:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/location.cpp.i
-.PHONY : model/location.cpp.i
-
-model/location.s: model/location.cpp.s
-
-.PHONY : model/location.s
-
-# target to generate assembly for a file
-model/location.cpp.s:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/location.cpp.s
-.PHONY : model/location.cpp.s
-
-model/user.o: model/user.cpp.o
-
-.PHONY : model/user.o
-
-# target to build an object file
-model/user.cpp.o:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/user.cpp.o
-.PHONY : model/user.cpp.o
-
-model/user.i: model/user.cpp.i
-
-.PHONY : model/user.i
-
-# target to preprocess a source file
-model/user.cpp.i:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/user.cpp.i
-.PHONY : model/user.cpp.i
-
-model/user.s: model/user.cpp.s
-
-.PHONY : model/user.s
-
-# target to generate assembly for a file
-model/user.cpp.s:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/user.cpp.s
-.PHONY : model/user.cpp.s
-
-model/visit.o: model/visit.cpp.o
-
-.PHONY : model/visit.o
-
-# target to build an object file
-model/visit.cpp.o:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/visit.cpp.o
-.PHONY : model/visit.cpp.o
-
-model/visit.i: model/visit.cpp.i
-
-.PHONY : model/visit.i
-
-# target to preprocess a source file
-model/visit.cpp.i:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/visit.cpp.i
-.PHONY : model/visit.cpp.i
-
-model/visit.s: model/visit.cpp.s
-
-.PHONY : model/visit.s
-
-# target to generate assembly for a file
-model/visit.cpp.s:
-	$(MAKE) -f CMakeFiles/highload.dir/build.make CMakeFiles/highload.dir/model/visit.cpp.s
-.PHONY : model/visit.cpp.s
-
 state.o: state.cpp.o
 
 .PHONY : state.o
@@ -297,18 +189,6 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... model/entity.o"
-	@echo "... model/entity.i"
-	@echo "... model/entity.s"
-	@echo "... model/location.o"
-	@echo "... model/location.i"
-	@echo "... model/location.s"
-	@echo "... model/user.o"
-	@echo "... model/user.i"
-	@echo "... model/user.s"
-	@echo "... model/visit.o"
-	@echo "... model/visit.i"
-	@echo "... model/visit.s"
 	@echo "... state.o"
 	@echo "... state.i"
 	@echo "... state.s"

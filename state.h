@@ -16,7 +16,6 @@
 #include "model/location.h"
 #include "model/visit.h"
 #include "logger.h"
-#include "fast_hash_map.h"
 
 using namespace std;
 
@@ -52,23 +51,23 @@ public:
 
     bool has_entity(EntityType type, int id)
     {
-        return type == UserEntity && id < M_USERS_MAX_ID && users[id] != NULL
-            || type == LocationEntity && id < M_LOCATIONS_MAX_ID && locations[id] != NULL
-            || type == VisitEntity && id < M_VISITS_MAX_ID && visits[id] != NULL;
+        return type == UserEntity && id >= 0 && id < M_USERS_MAX_ID && users[id] != NULL
+            || type == LocationEntity && id >= 0 && id < M_LOCATIONS_MAX_ID && locations[id] != NULL
+            || type == VisitEntity && id >= 0 && id < M_VISITS_MAX_ID && visits[id] != NULL;
     }
 
     Entity* get_entity(EntityType type, int id, bool clone = false)
     {
         if (type == UserEntity)
-            return (id >= M_USERS_MAX_ID || users[id] == NULL) ? NULL : (clone ? new User(*users[id]) : users[id]);
+            return (id < 0 || id >= M_USERS_MAX_ID || users[id] == NULL) ? NULL : (clone ? new User(*users[id]) : users[id]);
         if (type == LocationEntity)
-            return (id >= M_LOCATIONS_MAX_ID || locations[id] == NULL) ? NULL : (clone ? new Location(*locations[id]) : locations[id]);
+            return (id < 0 || id >= M_LOCATIONS_MAX_ID || locations[id] == NULL) ? NULL : (clone ? new Location(*locations[id]) : locations[id]);
         if (type == VisitEntity)
-            return (id >= M_VISITS_MAX_ID || visits[id] == NULL) ? NULL : (clone ? new Visit(*visits[id]) : visits[id]);
+            return (id < 0 || id >= M_VISITS_MAX_ID || visits[id] == NULL) ? NULL : (clone ? new Visit(*visits[id]) : visits[id]);
         return NULL;
     }
 
-    bool add_entity(Entity *entity)
+    void add_entity(Entity *entity)
     {
         if (auto *user = dynamic_cast<User*>(entity))
             add_user(*user);
@@ -76,11 +75,9 @@ public:
             add_location(*location);
         else if (auto *visit = dynamic_cast<Visit*>(entity))
             add_visit(*visit);
-        else
-            throw invalid_argument("invalid entity type");
     }
 
-    bool update_entity(Entity *entity)
+    void update_entity(Entity *entity)
     {
         if (auto *user = dynamic_cast<User*>(entity))
             update_user(*user);
@@ -88,8 +85,6 @@ public:
             update_location(*location);
         else if (auto *visit = dynamic_cast<Visit*>(entity))
             update_visit(*visit);
-        else
-            throw invalid_argument("invalid entity type");
     }
 
     void add_user(const User &_user)
@@ -115,13 +110,14 @@ public:
     void update_visit(const Visit &_visit)
     {
         auto visit = new Visit(_visit);
-
         auto old_visit = this->visits[visit->id];
 
         this->visits[visit->id] = visit; // TODO: memory leak
 
+#ifdef DEBUG
         if (visit->id != old_visit->id)
             throw invalid_argument("visait_id mismatch " + to_string(visit->id) + " != " + to_string(old_visit->id));
+#endif
 
         auto &old_user_visits_arr = this->user_visits[old_visit->user];
         for (int i = 0; i < (int) old_user_visits_arr.size(); i++)

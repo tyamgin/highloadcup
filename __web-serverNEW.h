@@ -36,93 +36,30 @@ using namespace std;
 #define M_LISTEN_MAX_CONN SOMAXCONN
 #define M_THREADS_COUNT 4
 
+class WebServer;
+
+class WebServerWorker
+{
+    WebServer *_server = NULL;
+
+public:
+    int efd;
+    bool is_master;
+
+    explicit WebServerWorker(WebServer *server, bool is_master);
+
+    void do_work();
+};
+
+
 class WebServer
 {
     typedef int (*Handler)(int);
 
     uint16_t _port;
     Handler _handler;
-    int sfd, efd;
-
-
-    static void* _thread_main(void *context)
-    {
-        ((WebServer*) context)->_thread_main();
-        return NULL;
-    }
-
-    void _thread_main()
-    {
-        epoll_event event{};
-        epoll_event events[M_EPOLL_MAX_EVENTS];
-
-        while (1)
-        {
-            int n = epoll_wait(efd, events, M_EPOLL_MAX_EVENTS, 0);
-
-            if (n > 0)
-                M_DEBUG_LOG((long long) pthread_self() << "| wake ");
-
-            if (n < 0)
-            {
-                perror("epoll_wait");
-                //abort();
-            }
-
-            if (n > 1)
-                M_DEBUG_LOG((long long) pthread_self() << "| " << n << " in queue");
-
-            for (int i = 0; i < n; i++)
-            {
-                auto socket_fd = events[i].data.fd;
-
-                M_DEBUG_LOG((long long) pthread_self() << "| sock in: " << socket_fd);
-
-
-                if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (events[i].events & EPOLLRDHUP) || (!(events[i].events & EPOLLIN)))
-                {
-                    M_ERROR("epoll error: " << events[i].events);
-                    M_LOG("Query idx: " << state.query_id);
-                    close(events[i].data.fd);
-                }
-                else if (sfd == socket_fd)
-                {
-                    while (1)
-                    {
-                        sockaddr in_addr{};
-                        socklen_t in_len;
-                        in_len = sizeof in_addr;
-
-                        int infd = accept4(sfd, &in_addr, &in_len, SOCK_NONBLOCK);
-                        if (infd == -1)
-                        {
-                            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                                break;
-
-                            perror("accept");
-                            break;
-                        }
-
-                        M_DEBUG_LOG((long long) pthread_self() << "| accepted: " << infd);
-
-                        _make_socket_nodelay(infd);
-
-                        event.data.fd = infd;
-                        event.events = M_FLAGS;
-                        if (epoll_ctl(efd, EPOLL_CTL_ADD, infd, &event) == -1)
-                        {
-                            perror("epoll_ctl add");
-                            abort();
-                        }
-                    }
-                }
-                else
-                {
-                    _handler(socket_fd);
-                }
-            }
-        }
-    }
+    WebServerWorker* workers[M_THREADS_COUNT];
+    int sfd;
 
     int _create_and_bind()
     {
@@ -219,6 +156,12 @@ class WebServer
         }
     }
 
+    static void* _do_work(void* context)
+    {
+        ((WebServerWorker*) context)->do_work();
+        return NULL;
+    }
+
 public:
     explicit WebServer(uint16_t port, Handler handler)
     {
@@ -239,37 +182,126 @@ public:
             abort();
         }
 
-        efd = epoll_create1(0);
-
-        if (efd == -1)
+        for(int i = 0; i < M_THREADS_COUNT; i++)
         {
-            perror("epoll_create");
-            abort();
+            workers[i] = new WebServerWorker(this, i == 0);
         }
 
         epoll_event event{};
         event.data.fd = sfd;
         event.events = M_FLAGS;
 
-        if (epoll_ctl(efd, EPOLL_CTL_ADD, sfd, &event) == -1)
+        if (epoll_ctl(workers[0]->efd, EPOLL_CTL_ADD, sfd, &event) == -1)
         {
             perror("epoll_ctl");
             abort();
         }
 
-#if M_THREADS_COUNT
         pthread_t threads[M_THREADS_COUNT];
 
         for (int i = 0; i < M_THREADS_COUNT; i++)
-            pthread_create(&threads[i], NULL, _thread_main, this);
+            pthread_create(&threads[i], NULL, &WebServer::_do_work, workers[i]);
 
         for (int i = 0; i < M_THREADS_COUNT; i++)
             pthread_join(threads[i], NULL);
-#else
-        _thread_main();
-#endif
+
         close(sfd);
     }
+
+    friend class WebServerWorker;
 };
+
+
+
+WebServerWorker::WebServerWorker(WebServer* server, bool is_master)
+{
+    this->_server = server;
+    this->is_master = is_master;
+
+    efd = epoll_create1(0);
+
+    if (efd == -1)
+    {
+        perror("epoll_create");
+        abort();
+    }
+}
+
+void WebServerWorker::do_work()
+{
+    auto sfd = _server->sfd;
+    epoll_event event{};
+    epoll_event events[M_EPOLL_MAX_EVENTS];
+
+    while (1)
+    {
+        int n = epoll_wait(efd, events, M_EPOLL_MAX_EVENTS, 0);
+
+        if (n > 0)
+            M_DEBUG_LOG((long long) pthread_self() << "| wake ");
+
+        if (n < 0)
+        {
+            perror("epoll_wait");
+            //abort();
+        }
+
+        if (n > 1)
+            M_DEBUG_LOG((long long) pthread_self() << "| " << n << " in queue");
+
+        for (int i = 0; i < n; i++)
+        {
+            auto socket_fd = events[i].data.fd;
+
+            M_DEBUG_LOG((long long) pthread_self() << "| sock in: " << socket_fd);
+
+
+            if ((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP) || (events[i].events & EPOLLRDHUP) || (!(events[i].events & EPOLLIN)))
+            {
+                M_ERROR("epoll error: " << events[i].events);
+                M_LOG("Query idx: " << state.query_id);
+                close(events[i].data.fd);
+            }
+            else if (sfd == socket_fd)
+            {
+                assert(is_master);
+                while (1)
+                {
+                    sockaddr in_addr{};
+                    socklen_t in_len;
+                    in_len = sizeof in_addr;
+
+                    int infd = accept4(sfd, &in_addr, &in_len, SOCK_NONBLOCK);
+                    if (infd == -1)
+                    {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK)
+                            break;
+
+                        perror("accept");
+                        break;
+                    }
+
+                    M_DEBUG_LOG((long long) pthread_self() << "| accepted: " << infd);
+
+                    WebServer::_make_socket_nodelay(infd);
+
+                    event.data.fd = infd;
+                    event.events = M_FLAGS;
+                    auto target_efd = _server->workers[infd % M_THREADS_COUNT]->efd;
+                    M_DEBUG_LOG(infd << " -> " << target_efd);
+                    if (epoll_ctl(target_efd, EPOLL_CTL_ADD, infd, &event) == -1)
+                    {
+                        perror("epoll_ctl add");
+                        abort();
+                    }
+                }
+            }
+            else
+            {
+                _server->_handler(socket_fd);
+            }
+        }
+    }
+}
 
 #endif //HIGHLOAD_WEB_SERVER_H

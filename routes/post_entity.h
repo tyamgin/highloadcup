@@ -1,8 +1,6 @@
 #ifndef HIGHLOAD_POST_USER_NEW_H
 #define HIGHLOAD_POST_USER_NEW_H
 
-#include <string>
-
 #include "../state.h"
 #include "base.h"
 #include "../utility.h"
@@ -18,13 +16,6 @@ public:
 
     void process(EntityType entity_type, const char* str_id, const char* request_body)
     {
-        json::Object json;
-        if (!json.parse_simple_object(request_body, (int) strlen(request_body)))
-        {
-            handle_400();
-            return;
-        }
-
         int entity_id = 0;
         if (strcmp(str_id, "new") != 0 && !Utility::tryParseInt(str_id, entity_id))
         {
@@ -53,7 +44,8 @@ public:
             }
         }
 
-        if (!entity->parse(json, str_id[0] == 'n'))
+        json::Object json;
+        if (!json.parse_simple_object(request_body, (int) strlen(request_body)) || !entity->parse(json, str_id[0] == 'n'))
         {
             handle_400();
             return;

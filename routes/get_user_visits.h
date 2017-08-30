@@ -37,7 +37,7 @@ public:
             return;
         }
 
-        if (user_id >= M_USERS_MAX_ID || state.users[user_id] == NULL)
+        if (user_id < 0 || user_id >= M_USERS_MAX_ID || state.users[user_id] == NULL)
         {
             handle_404();
             return;

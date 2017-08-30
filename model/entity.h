@@ -89,7 +89,7 @@ protected:
         auto json_len = strlen(buf);\
         auto response_buf_size = json_len + M_STRLEN(M_RESPONSE_200_PREFIX) + 9;\
         /*delete json; memory leak*/\
-        json = new char[response_buf_size];\
+        json = (char*) malloc(response_buf_size);\
         memcpy(json, M_RESPONSE_200_PREFIX, M_STRLEN(M_RESPONSE_200_PREFIX));\
         auto body_ptr = json + M_STRLEN(M_RESPONSE_200_PREFIX) + sprintf(json + M_STRLEN(M_RESPONSE_200_PREFIX), "%d\n\n", (int) json_len);\
         memcpy(body_ptr, buf, json_len);\

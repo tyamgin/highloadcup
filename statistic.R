@@ -1,6 +1,6 @@
 require(ggplot2)
 
-path = '/home/tyamgin/CLionProjects/hlcupdocs-master/logs/2017-08-27_11-17-20.Z8QmoA/phout_KcBHI2.log'
+path = '/home/tyamgin/CLionProjects/hlcupdocs-master/logs/2017-08-29_21-27-52.J3vx32/phout_5pVxiS.log'
 
 conn = file(path, open="r")
 linn = readLines(conn)

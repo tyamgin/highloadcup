@@ -3,7 +3,7 @@ project(highload)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(SOURCE_FILES main.cpp web-server.h model/user.cpp model/user.h model/location.cpp model/location.h model/visit.cpp model/visit.h state.cpp state.h routes/base.h routes/get_entity.h model/entity.cpp model/entity.h utility.h routes/get_user_visits.h routes/get_location_avg.h routes/post_entity.h logger.h json.h fast_hash_map.h)
+set(SOURCE_FILES main.cpp web-server.h model/user.h model/location.h model/visit.h state.cpp state.h routes/base.h routes/get_entity.h model/entity.h utility.h routes/get_user_visits.h routes/get_location_avg.h routes/post_entity.h logger.h json.h)
 add_executable(highload ${SOURCE_FILES})
 
 find_package(Threads REQUIRED)

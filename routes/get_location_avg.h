@@ -32,7 +32,7 @@ public:
             return;
         }
 
-        if (location_id >= M_LOCATIONS_MAX_ID || state.locations[location_id] == NULL)
+        if (location_id < 0 || location_id >= M_LOCATIONS_MAX_ID || state.locations[location_id] == NULL)
         {
             handle_404();
             return;

@@ -84,9 +84,6 @@
          </MakeCommands>
       </Target>
       </Build>
-      <Unit filename="/home/tyamgin/CLionProjects/highload/fast_hash_map.h">
-         <Option target="highload"/>
-      </Unit>
       <Unit filename="/home/tyamgin/CLionProjects/highload/json.h">
          <Option target="highload"/>
       </Unit>
@@ -96,25 +93,13 @@
       <Unit filename="/home/tyamgin/CLionProjects/highload/main.cpp">
          <Option target="highload"/>
       </Unit>
-      <Unit filename="/home/tyamgin/CLionProjects/highload/model/entity.cpp">
-         <Option target="highload"/>
-      </Unit>
       <Unit filename="/home/tyamgin/CLionProjects/highload/model/entity.h">
-         <Option target="highload"/>
-      </Unit>
-      <Unit filename="/home/tyamgin/CLionProjects/highload/model/location.cpp">
          <Option target="highload"/>
       </Unit>
       <Unit filename="/home/tyamgin/CLionProjects/highload/model/location.h">
          <Option target="highload"/>
       </Unit>
-      <Unit filename="/home/tyamgin/CLionProjects/highload/model/user.cpp">
-         <Option target="highload"/>
-      </Unit>
       <Unit filename="/home/tyamgin/CLionProjects/highload/model/user.h">
-         <Option target="highload"/>
-      </Unit>
-      <Unit filename="/home/tyamgin/CLionProjects/highload/model/visit.cpp">
          <Option target="highload"/>
       </Unit>
       <Unit filename="/home/tyamgin/CLionProjects/highload/model/visit.h">
