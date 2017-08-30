@@ -11,7 +11,6 @@ RUN apt-get install sudo
 
 # Copy project
 RUN mkdir /home/tyamgin
-RUN mkdir /home/tyamgin/asdasdHACK
 RUN mkdir /home/tyamgin/CLionProjects
 RUN mkdir /home/tyamgin/CLionProjects/highload
 

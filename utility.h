@@ -45,27 +45,6 @@ public:
         return true;
     }
 
-
-    static bool is_int1(const char* str)
-    {
-        if (str[0] == 0)
-            return false;
-
-        if (str[0] != '-' && isdigit(str[0]) == 0)
-            return false;
-
-        for(int i = 1; str[i] != 0; i++)
-        {
-            if (isdigit(str[i]) == 0)
-                return false;
-            if (i > 12)
-                return false;
-        }
-
-        auto ll_val = atoll(str);
-        return ll_val >= INT_MIN && ll_val <= INT_MAX;
-    }
-
     static HashType stringUrlDecodedHash(const char* src)
     {
         char a, b;
